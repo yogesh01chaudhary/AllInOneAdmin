@@ -71,13 +71,10 @@ exports.loginAdmin = async (req, res) => {
       expiresIn: process.env.jwtExpiration,
     });
 
-    // let refreshToken = await createToken(admin);
-
     return res.status(200).send({
       success: true,
       message: "User logged in Successsfully!",
       token,
-      
     });
   } catch (e) {
     return res.status(400).send({
