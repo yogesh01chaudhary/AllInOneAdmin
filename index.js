@@ -1,12 +1,16 @@
 const express = require("express");
 const app = express();
+const morgan = require("morgan");
 const router = require("./routes/admin");
 const refreshRouter = require("./routes/refreshToken");
+const categoryRouter = require("./routes/category");
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
+app.use(morgan("tiny"));
 app.use("/api/v1/admin", router);
 app.use("/api/v1/admin", refreshRouter);
+app.use("/api/v1/admin", categoryRouter);
 
 require("dotenv/config");
 const { connect } = require("./connection/dbConnection");

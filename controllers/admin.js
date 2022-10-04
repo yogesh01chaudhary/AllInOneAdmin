@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const { Vendor } = require("../models/vendor");
 const { sendMail, createPassword } = require("../helpers/sendPassword");
-const { createToken } = require("../helpers/refreshToken");
 
 // exports.signUpAdmin = async (req, res) => {
 //   try {
@@ -66,7 +65,7 @@ exports.loginAdmin = async (req, res) => {
         message: "Invalid credentials,Pasword Incorrect",
       });
     }
-
+    console.log(process.env.JWT_SECRET, process.env.jwtExpiration);
     let token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.jwtExpiration,
     });
@@ -87,16 +86,40 @@ exports.loginAdmin = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    let users = await User.find();
-    console.log(users);
+    // const limitValue = req.query.limit || 2;
+    // const skipValue = req.query.skip || 0;
+    // let users = await User.find().limit(limitValue).skip(skipValue);
+    // console.log(users);
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await User.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: {} },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0].count;
+    let users = data[0].totalData;
     if (!users) {
-      return res
-        .status(200)
-        .send({ success: true, message: "No users in collection", users });
+      return res.status(200).send({
+        success: true,
+        message: "No users in collection",
+        users,
+        count,
+      });
     }
-    res
-      .status(200)
-      .send({ success: true, message: "Users fetched successfully", users });
+    res.status(200).send({
+      success: true,
+      message: "Users fetched successfully",
+      users,
+      count,
+    });
   } catch (e) {
     return res.status(400).send({
       success: false,
@@ -108,7 +131,25 @@ exports.getUsers = async (req, res) => {
 
 exports.getVendors = async (req, res) => {
   try {
-    let vendors = await Vendor.find({});
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: {} },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0].count;
+    let vendors = data[0].totalData;
+    // console.log("data", data[0].totalData);
+    // let vendors = await Vendor.find({}).limit(limitValue).skip(skipValue);
+    // console.log(count,vendors)
     if (!vendors) {
       return res
         .status(200)
@@ -116,7 +157,7 @@ exports.getVendors = async (req, res) => {
     }
     return res
       .status(200)
-      .send({ success: true, message: "Vendors found", vendors });
+      .send({ success: true, message: "Vendors found", vendors, count });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
   }
@@ -155,6 +196,7 @@ exports.acceptRequest = async (req, res) => {
     return res.status(500).send({ success: false, error: e.name });
   }
 };
+
 exports.rejectRequest = async (req, res) => {
   try {
     const { body } = req;
@@ -187,7 +229,31 @@ exports.rejectRequest = async (req, res) => {
 
 exports.getPending = async (req, res) => {
   try {
-    const result = await Vendor.find({ requestStatus: "pending" });
+    // const limitValue = req.query.limit || 2;
+    // const skipValue = req.query.skip || 0;
+    // const result = await Vendor.find({ requestStatus: "pending" })
+    //   .limit(limitValue)
+    //   .skip(skipValue);
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: { requestStatus: "pending" } },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            { $match: { requestStatus: "pending" } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+
+    let count = data[0].totalCount[0].count;
+    let result = data[0].totalData;
     if (result.length == 0) {
       return res.status(200).send({
         success: true,
@@ -195,9 +261,13 @@ exports.getPending = async (req, res) => {
         result,
       });
     }
-    res
-      .status(200)
-      .send({ success: true, message: "users with pending request", result });
+    res.status(200).send({
+      success: true,
+      message: "users with pending request",
+      result,
+      count,
+      //   data,
+    });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
   }
@@ -205,7 +275,30 @@ exports.getPending = async (req, res) => {
 
 exports.getRejected = async (req, res) => {
   try {
-    const result = await Vendor.find({ requestStatus: "rejected" });
+    // const limitValue = req.query.limit || 2;
+    // const skipValue = req.query.skip || 0;
+    // const result = await Vendor.find({ requestStatus: "rejected" })
+    //   .limit(limitValue)
+    //   .skip(skipValue);
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: { requestStatus: "rejected" } },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            { $match: { requestStatus: "rejected" } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0].count;
+    let result = data[0].totalData;
     if (result.length == 0) {
       return res.status(200).send({
         success: true,
@@ -213,16 +306,43 @@ exports.getRejected = async (req, res) => {
         result,
       });
     }
-    res
-      .status(200)
-      .send({ success: true, message: "users with rejected request", result });
+    res.status(200).send({
+      success: true,
+      message: "users with rejected request",
+      result,
+      count,
+    });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
   }
 };
+
 exports.getAccepted = async (req, res) => {
   try {
-    const result = await Vendor.find({ requestStatus: "accepted" });
+    // const limitValue = req.query.limit || 2;
+    // const skipValue = req.query.skip || 0;
+    // const result = await Vendor.find({ requestStatus: "accepted" })
+    //   .limit(limitValue)
+    //   .skip(skipValue);
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: { requestStatus: "accepted" } },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            { $match: { requestStatus: "accepted" } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0].count;
+    let result = data[0].totalData;
     if (result.length == 0) {
       return res.status(200).send({
         success: true,
@@ -230,9 +350,12 @@ exports.getAccepted = async (req, res) => {
         result,
       });
     }
-    res
-      .status(200)
-      .send({ success: true, message: "users with accepted request", result });
+    res.status(200).send({
+      success: true,
+      message: "users with accepted request",
+      result,
+      count,
+    });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
   }
