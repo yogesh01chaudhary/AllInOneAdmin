@@ -4,7 +4,7 @@ const { Category } = require("../models/category");
 const { SubCategory } = require("../models/sub-category");
 const { SubCategory2 } = require("../models/sub-category2");
 const { Service } = require("../models/services");
-const { findOne } = require("../models/user");
+const { findOne, findByIdAndDelete } = require("../models/user");
 
 exports.createTest = async (req, res) => {
   const { body } = req;
@@ -252,7 +252,7 @@ exports.addServiceToCategory = async (req, res) => {
       .keys({
         name: Joi.string().required(),
         image: Joi.string(),
-        description: Joi.string().required(),
+        description: Joi.string(),
         rating: Joi.number(),
         categoryId: Joi.string().required(),
       })
@@ -328,7 +328,7 @@ exports.addServiceToSubCategory = async (req, res) => {
       .keys({
         name: Joi.string().required(),
         image: Joi.string(),
-        description: Joi.string().required(),
+        description: Joi.string(),
         rating: Joi.number(),
         subCategoryId: Joi.string().required(),
       })
@@ -403,7 +403,7 @@ exports.addServiceToSubCategory2 = async (req, res) => {
       .keys({
         name: Joi.string().required(),
         image: Joi.string(),
-        description: Joi.string().required(),
+        description: Joi.string(),
         rating: Joi.number(),
         subCategory2Id: Joi.string().required(),
       })
@@ -546,6 +546,7 @@ exports.getAllSubCategories2 = async (req, res) => {
     return res.status(500).send({ success: false, error: e.name });
   }
 };
+
 exports.getAllSubCategories = async (req, res) => {
   try {
     let category = await Category.find(
@@ -715,13 +716,212 @@ exports.getSubCategory2ForService = async (req, res) => {
   }
 };
 
-exports.deleteCategory = async (req, res) => {};
+exports.deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.body;
+    let category = await Category.findById(id);
+    if (!category) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Category doesn't exist" });
+    }
+    if (category.subCategory.length === 0 && category.service.length === 0) {
+      let category = await Category.findByIdAndDelete(id);
+      if (!category) {
+        return res.status(404).send({
+          success: false,
+          message: "Category doesn't exist in condition",
+        });
+      }
+      return res.status(200).send({
+        success: true,
+        message: "Category Deleted Successfully",
+        data: category,
+      });
+    }
+    return res.status(200).send({
+      success: true,
+      message:
+        "Catgory can't be deleted,You need to delete subCategory or service first",
+      data: category,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
 
-exports.deleteSubCategory = async (req, res) => {};
+exports.deleteSubCategory = async (req, res) => {
+  try {
+    const { id, categoryId } = req.body;
+    let subCategory = await SubCategory.findById(id);
+    if (!subCategory) {
+      return res
+        .status(404)
+        .send({ success: false, message: "SubCategory doesn't exist" });
+    }
+    // console.log(subCategory.subCategory2.length, subCategory.service.length);
+    if (
+      subCategory.subCategory2.length === 0 &&
+      subCategory.service.length === 0
+    ) {
+      subCategory = await SubCategory.findByIdAndDelete(id);
+      if (!subCategory) {
+        return res.status(404).send({
+          success: false,
+          message: "SubCategory doesn't exist inside condition",
+        });
+      }
 
-exports.deleteSubCategory2 = async (req, res) => {};
+      let category = await Category.findByIdUpdate(
+        { _id: categoryId },
+        { $pull: { "category.subCategory[subCategory.length-1]._id": id } },
+        { new: true }
+      );
 
-exports.deleteService = async (req, res) => {};
+      console.log(category.subCategory[subCategory.length - 1]._id);
+
+      return res.status(200).send({
+        success: true,
+        message: "SubCategory Deleted Successfully",
+        data: subCategory,
+        category,
+      });
+    }
+    return res.status(200).send({
+      success: true,
+      message:
+        "SubCategory can't be deleted,You need to delete subCategory2 or service first",
+      data: subCategory,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.deleteSubCategory2 = async (req, res) => {
+  try {
+    const { id, subCategoryId } = req.body;
+    let subCategory2 = await SubCategory2.findById(id);
+    if (!subCategory2) {
+      return res
+        .status(404)
+        .send({ success: false, message: "SubCategory2 doesn't exist" });
+    }
+    // console.log(subCategory2.service.length)
+    if (subCategory2.service.length === 0) {
+      let subCategory2 = await SubCategory2.findByIdAndDelete(id);
+      if (!subCategory2) {
+        return res
+          .status(404)
+          .send({ success: false, message: "SubCategory2 doesn't exist" });
+      }
+      //   let subCategory = await SubCategory.findById(subCategoryId);
+      let subCategory = await SubCategory.findByIdUpdate(
+        { _id: subCategoryId },
+        { $pull: { "subCategory.subCategory2[subCategory2.length]._id": id } },
+        { new: true }
+      );
+      return res.status(200).send({
+        success: true,
+        message: "SubCategory2 Deleted Successfully",
+        data: subCategory2,
+        subCategory,
+      });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "SubCategory2 can't be deleted,You need to delete service first",
+      data: subCategory2,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.deleteServiceForCategory = async (req, res) => {
+  try {
+    const { id, categoryId } = req.body;
+    let service = await Service.findByIdAndDelete(id);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Service doesn't exist" });
+    }
+
+    // let category = await Category.findById(categoryId);
+    let category = await Category.findOneAndUpdate(
+      { _id: categoryId },
+      { $pull: { "category.service[service.length-1]._id": id } },
+      { new: true }
+    );
+    // console.log(res.status(200).json({ result }));
+
+    return res.status(200).send({
+      success: true,
+      message: "Service Deleted Successfully",
+      data: service,
+      category,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.deleteServiceForSubCategory = async (req, res) => {
+  try {
+    const { id, subCategoryId } = req.body;
+    let service = await Service.findByIdAndDelete(id);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Service doesn't exist" });
+    }
+
+    // let subCategory = await SubCategory.findById(subCategoryId);
+    let subCategory = await SubCategory.findOneAndUpdate(
+      { _id: subCategoryId },
+      { $pull: { "service[service.length-1]._id": id } },
+      { new: true }
+    );
+    // console.log(res.status(200).json({ result }));
+
+    return res.status(200).send({
+      success: true,
+      message: "Service Deleted Successfully",
+      data: service,
+      subCategory,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+exports.deleteServiceForSubCategory2 = async (req, res) => {
+  try {
+    const { id, subCategory2Id } = req.body;
+    let service = await Service.findByIdAndDelete(id);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Service doesn't exist" });
+    }
+
+    let subCategory2 = await SubCategory2.findById(subCategory2Id);
+    let result = await Service.findOneAndUpdate(
+      { _id: subCategory2._id },
+      { $pull: { "service[service.length-1]._id": id } },
+      { new: true }
+    );
+    console.log(res.status(200).json({ result }));
+
+    return res.status(200).send({
+      success: true,
+      message: "Service Deleted Successfully",
+      data: service,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
 
 exports.updateCategory = async (req, res) => {};
 

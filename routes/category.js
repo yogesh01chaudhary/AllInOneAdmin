@@ -25,6 +25,8 @@ const {
   updateSubCategory,
   updateSubCategory2,
   updateService,
+  deleteServiceForSubCategory2,
+  deleteServiceForCategory,
 } = require("../controllers/category");
 const { auth } = require("../middleware/auth");
 const { isAdmin } = require("../middleware/isAdmin");
@@ -74,7 +76,9 @@ router.get(
 router.delete("/category", auth, isAdmin, deleteCategory);
 router.delete("/subCategory", auth, isAdmin, deleteSubCategory);
 router.delete("/subCategory2", auth, isAdmin, deleteSubCategory2);
-router.delete("/service", auth, isAdmin, deleteService);
+router.delete("/serviceCategory", auth, isAdmin, deleteServiceForCategory);
+router.delete("/serviceSubCategory", auth, isAdmin, deleteServiceForSubCategory2);
+router.delete("/serviceSubCategory2", auth, isAdmin, deleteServiceForSubCategory2);
 router.put("/category", auth, isAdmin, updateCategory);
 router.put("/subCategory", auth, isAdmin, updateSubCategory);
 router.put("/subCategory2", auth, isAdmin, updateSubCategory2);
