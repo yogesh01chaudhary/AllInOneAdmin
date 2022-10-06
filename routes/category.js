@@ -65,7 +65,7 @@ router.get(
 );
 router.get("/getCategoryForService", auth, isAdmin, getCategoryForService);
 router.get(
-  "/getSubCategoryForSubCategory2",
+  "/getSubCategoryForSubCategory2/:id",
   auth,
   isAdmin,
   getSubCategoryForSubCategory2
@@ -77,7 +77,7 @@ router.get(
   getSubCategoryForService
 );
 router.get(
-  "/getSubCategory2ForService",
+  "/getSubCategory2ForService/:id",
   auth,
   isAdmin,
   getSubCategory2ForService
