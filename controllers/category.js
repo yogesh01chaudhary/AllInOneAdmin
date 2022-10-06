@@ -728,25 +728,39 @@ exports.getSubCategoryForService = async (req, res) => {
 
 exports.getSubCategory2ForService = async (req, res) => {
   try {
-    const { id } = req.params;
-    let subCategory2 = await Category.find(
+    const { id  } = req.params;
+    // const { sid } = req.params;
+    console.log({ req: req.params });
+    let subCategory = await Category.find(
       { _id: id },
       { _id: 1, name: 1, service: 1, subCategory: 1 }
     ).populate({
       path: "subCategory",
       select: { __v: 0 },
-      populate: { path: "subCategory2", select: { __v: 0 } },
+      populate: {
+        path: "subCategory2",
+        select: { __v: 0 },
+        populate: { path: "service" },
+      },
     });
 
-    if (!subCategory2) {
+    if (!subCategory) {
       return res
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+    subCategory = subCategory.map((data) => {
+      return data.subCategory.map((item) => {
+        if (item.service.length === 0) return item;
+      });
+    });
+    subCategory = subCategory[0].filter((data) => {
+      if (data !== null) return data;
+    });
     return res.status(200).send({
       success: true,
       message: "SubCategory2 for service fetched successfully",
-      subCategory2,
+      subCategory,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });

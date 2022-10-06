@@ -21,8 +21,8 @@ const {
   deleteSubCategory2,
   deleteSubCategory,
   //   deleteService,
-  
-//   updateService,
+
+  //   updateService,
   deleteServiceForSubCategory2,
   deleteServiceForCategory,
   deleteServiceForSubCategory,
@@ -65,7 +65,7 @@ router.get(
 );
 router.get("/getCategoryForService", auth, isAdmin, getCategoryForService);
 router.get(
-  "/getSubCategoryForSubCategory2/:id",
+  "/getSubCategoryForSubCategory2/:id/",
   auth,
   isAdmin,
   getSubCategoryForSubCategory2
