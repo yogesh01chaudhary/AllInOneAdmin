@@ -658,6 +658,14 @@ exports.getSubCategoryForSubCategory2 = async (req, res) => {
       { __v: 0 }
     ).populate({ path: "subCategory", select: { __v: 0 } });
 
+    //  console.log(subCategory)
+    // subCategory = subCategory.map((data) => {
+    //   if (typeof data) console.log(data);
+    // });
+
+    // subCategory
+    // data.subCategory[0].service.length;
+
     // let subCategory = await SubCategory.find(
     //   { service: { $size: 0 } },
     //   { _id: 1, name: 1, subCategory2: 1, service: 1 }
@@ -668,9 +676,17 @@ exports.getSubCategoryForSubCategory2 = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+    subCategory = subCategory.map((data) => {
+      return data.subCategory.map((item) => {
+        if (item.service.length === 0) return item;
+      });
+    });
+    subCategory = subCategory[0].filter((data) => {
+      if (data !== null) return data;
+    });
     return res.status(200).send({
       success: true,
-      message: "SubCategory fro SubCategory2 fetched successfully",
+      message: "SubCategory for SubCategory2 fetched successfully",
       subCategory,
     });
   } catch (e) {
@@ -682,26 +698,28 @@ exports.getSubCategoryForService = async (req, res) => {
   try {
     console.log(req.params);
     const { id } = req.params;
-    let category = await Category.find(
-      { _id: id, service: { $size: 0 } },
+    let subCategory = await Category.find(
+      { _id: id, subCategory2: { $size: 0 } },
       { __v: 0 }
     ).populate({ path: "subCategory", select: { __v: 0 } });
 
-    // let subCategory = await SubCategory.find(
-    //   { subCategory2: { $size: 0 } },
-    //   { _id: 1, name: 1, subCategory2: 1, service: 1 }
-    // );
-
-    if (!category) {
+    if (!subCategory) {
       return res
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+    subCategory = subCategory.map((data) => {
+      return data.subCategory.map((item) => {
+        if (item.subCategory2.length === 0) return item;
+      });
+    });
+    subCategory = subCategory[0].filter((data) => {
+      if (data !== null) return data;
+    });
     return res.status(200).send({
       success: true,
       message: "SubCategory for Service fetched successfully",
-      // subCategory,
-      category,
+      subCategory,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
@@ -710,10 +728,15 @@ exports.getSubCategoryForService = async (req, res) => {
 
 exports.getSubCategory2ForService = async (req, res) => {
   try {
-    let subCategory2 = await SubCategory2.find(
-      {},
-      { _id: 1, name: 1, service: 1 }
-    );
+    const { id } = req.params;
+    let subCategory2 = await Category.find(
+      { _id: id },
+      { _id: 1, name: 1, service: 1, subCategory: 1 }
+    ).populate({
+      path: "subCategory",
+      select: { __v: 0 },
+      populate: { path: "subCategory2", select: { __v: 0 } },
+    });
 
     if (!subCategory2) {
       return res
