@@ -728,7 +728,7 @@ exports.getSubCategoryForService = async (req, res) => {
 
 exports.getSubCategory2ForService = async (req, res) => {
   try {
-    const { id  } = req.params;
+    const { id, sid } = req.params;
     // const { sid } = req.params;
     console.log({ req: req.params });
     let subCategory = await Category.find(
@@ -751,7 +751,7 @@ exports.getSubCategory2ForService = async (req, res) => {
     }
     subCategory = subCategory.map((data) => {
       return data.subCategory.map((item) => {
-        if (item.service.length === 0) return item;
+        if (item.service.length === 0 && item._id == sid) return item;
       });
     });
     subCategory = subCategory[0].filter((data) => {
