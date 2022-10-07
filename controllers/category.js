@@ -536,6 +536,22 @@ exports.getAllSubCategories2 = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+    category = category.map((data) => {
+      return data.subCategory.map((item) => {
+        if (item.service.length == 0) return item;
+      });
+    });
+
+    category = category.map((data) => {
+      if (data.length !== 0) return data;
+    });
+    category = category.filter((data) => {
+      if (data !== null) return data;
+    });
+    category = category[0].filter((data) => {
+      if (data !== null) return data;
+    });
+
     return res.status(200).send({
       success: true,
       message: "SubCategory2 fetched successfully",
@@ -567,6 +583,23 @@ exports.getAllSubCategories = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+    // console.log(category.length);
+    category = category.map((data) => {
+      return data.subCategory.map((item) => {
+        if (item.subCategory2.length == 0) return item;
+      });
+    });
+
+    category = category.map((data) => {
+      if (data.length !== 0) return data;
+    });
+    category = category.filter((data) => {
+      if (data !== null) return data;
+    });
+    category = category[0].filter((data) => {
+      if (data !== null) return data;
+    });
+
     return res.status(200).send({
       success: true,
       message: "SubCategory fetched successfully",
@@ -595,6 +628,25 @@ exports.getAllCategories = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+
+    // console.log(category.length);
+    category = category.map((data) => {
+      if (data.subCategory.length == 0) {
+        return data;
+      }
+    });
+    category = category.filter((data) => {
+      if (data !== null) return data;
+    });
+    // console.log(category);
+    // category = category.map((data) => {
+    //   return data.subCategory.map((item) => {
+    //     if (item.service.length === 0) return item;
+    //   });
+    // });
+    // category = category.filter((data) => {
+    //   if (data !== null) return data;
+    // });
     return res.status(200).send({
       success: true,
       message: "Category fetched successfully",
@@ -731,6 +783,7 @@ exports.getSubCategory2ForService = async (req, res) => {
     const { id, sid } = req.params;
     // const { sid } = req.params;
     console.log({ req: req.params });
+
     let subCategory = await Category.find(
       { _id: id },
       { _id: 1, name: 1, service: 1, subCategory: 1 }
@@ -1127,6 +1180,7 @@ exports.updateCategory = async (req, res) => {
 
     const { error } = Joi.object()
       .keys({
+        id: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         subCategory: Joi.string(),
@@ -1140,28 +1194,37 @@ exports.updateCategory = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let category = await Category.findOne({ name: body.name });
-    if (category) {
+    let category = await Category.findByIdAndUpdate(
+      { _id: body.id },
+      {
+        name: body.name,
+        image: body.image,
+        subCategory: body.subCategory,
+        service: body.service,
+      },
+      { new: true }
+    );
+    if (!category) {
       return res.status(409).send({
         success: false,
-        message: "Category Already Exists",
+        message: "Category Doesn't Exists",
         category,
       });
     }
-    category = new Category({
-      name: body.name,
-      image: body.image,
-    });
+    // category = new Category({
+    //   name: body.name,
+    //   image: body.image,
+    // });
 
-    category = await category.save();
-    if (!category) {
-      return res
-        .status(400)
-        .send({ success: false, message: "Category creation failed" });
-    }
+    // category = await category.save();
+    // if (!category) {
+    //   return res
+    //     .status(400)
+    //     .send({ success: false, message: "Category creation failed" });
+    // }
     return res.status(200).send({
       success: true,
-      message: "Category added successfully",
+      message: "Category updated successfully",
       category,
     });
   } catch (e) {
@@ -1174,6 +1237,7 @@ exports.updateSubCategory = async (req, res) => {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
+        id: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         subCategory: Joi.string(),
@@ -1198,47 +1262,51 @@ exports.updateSubCategory = async (req, res) => {
     if (category.service.length !== 0) {
       return res.status(500).send({
         success: false,
-        message: "Can not add subCategory, service already defined",
+        message: "Can not update subCategory, service already defined",
       });
     }
-    let subCategory = await SubCategory.findOne({ name: body.name });
-    if (subCategory) {
+    let subCategory = await SubCategory.findByIdAndUpdate(
+      { _id: body.id },
+      { name: body.name, image: body.image },
+      { new: true }
+    );
+    if (!subCategory) {
       return res.status(409).send({
         success: false,
-        message: "subCategory Already Exists",
+        message: "subCategory Doesn't Exists",
         subCategory,
         category,
       });
     }
-    subCategory = new SubCategory({
-      name: body.name,
-      image: body.image,
-    });
-    subCategory = await subCategory.save();
+    // subCategory = new SubCategory({
+    //   name: body.name,
+    //   image: body.image,
+    // });
+    // subCategory = await subCategory.save();
 
-    if (!subCategory) {
-      return res.status(500).send({
-        success: false,
-        message: "subCategory Creation Failed",
-      });
-    }
-    category = await Category.findByIdAndUpdate(
-      body.categoryId,
-      {
-        $push: { subCategory: subCategory._id },
-      },
-      { new: true }
-    );
+    // if (!subCategory) {
+    //   return res.status(500).send({
+    //     success: false,
+    //     message: "subCategory Creation Failed",
+    //   });
+    // }
+    // category = await Category.findByIdAndUpdate(
+    //   body.categoryId,
+    //   {
+    //     $push: { subCategory: subCategory._id },
+    //   },
+    //   { new: true }
+    // );
 
-    if (!category) {
-      return res
-        .status(500)
-        .send({ success: false, message: "Category updation failed" });
-    }
+    // if (!category) {
+    //   return res
+    //     .status(500)
+    //     .send({ success: false, message: "Category updation failed" });
+    // }
     return res.status(200).send({
       success: true,
       message:
-        "subCategory added successfully with updation of subcategory in category",
+        "subCategory updated successfully with updation of subcategory in category",
       subCategory,
       category,
     });
