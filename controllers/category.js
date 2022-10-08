@@ -513,7 +513,7 @@ exports.getAllCategory = async (req, res) => {
 exports.getAllSubCategories2 = async (req, res) => {
   try {
     let category = await Category.find(
-      {},
+      {_id:req.params.id},
       { _id: 1, name: 1, subCategory: 1, service: 1 }
     ).populate({
       path: "subCategory",
