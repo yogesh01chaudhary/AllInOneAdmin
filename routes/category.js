@@ -53,9 +53,9 @@ router.post(
   isAdmin,
   addServiceToSubCategory2
 );
-router.get("/getAllCategories", auth, isAdmin, getAllCategories);
-router.get("/getAllSubCategories", auth, isAdmin, getAllSubCategories);
-router.get("/getAllSubCategories2", auth, isAdmin, getAllSubCategories2);
+router.get("/getAllCategories/:id", auth, isAdmin, getAllCategories);
+router.get("/getAllSubCategories/:id", auth, isAdmin, getAllSubCategories);
+router.get("/getAllSubCategories2/:id", auth, isAdmin, getAllSubCategories2);
 router.get("/getAllCategory", auth, isAdmin, getAllCategory);
 router.get(
   "/getCategoryForSubCategory",

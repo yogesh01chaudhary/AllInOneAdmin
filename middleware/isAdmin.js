@@ -11,7 +11,7 @@ exports.isAdmin = async (req, res, next) => {
     next();
   } catch (e) {
     return res
-      .staus(500)
+      .status(500)
       .send({ success: false, message: "Something went wrong", error: e.name });
   }
 };

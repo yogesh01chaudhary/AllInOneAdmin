@@ -530,27 +530,21 @@ exports.getAllSubCategories2 = async (req, res) => {
         },
       },
     });
-
+    // category = category.map((val) => {
+    //   if (val.subCategory) {
+    //     return val.subCategory.filter((val2) => {
+    //       if (val2.subCategory2.length !== 0) {
+    //         return val2;
+    //       }
+    //     });
+    //   }
+    // });
+    // console.log(m);
     if (!category) {
       return res
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
-    category = category.map((data) => {
-      return data.subCategory.map((item) => {
-        if (item.service.length == 0) return item;
-      });
-    });
-
-    category = category.map((data) => {
-      if (data.length !== 0) return data;
-    });
-    category = category.filter((data) => {
-      if (data !== null) return data;
-    });
-    category = category[0].filter((data) => {
-      if (data !== null) return data;
-    });
 
     return res.status(200).send({
       success: true,
@@ -565,12 +559,12 @@ exports.getAllSubCategories2 = async (req, res) => {
 exports.getAllSubCategories = async (req, res) => {
   try {
     let category = await Category.find(
-      {},
+      { _id: req.params.id },
       { _id: 1, name: 1, subCategory: 1, service: 1 }
     ).populate({
       path: "subCategory",
       model: "subCategory",
-      select: { _id: 1, name: 1, service: 1, subCategory2: 1 },
+      select: { _id: 1, name: 1, service: 1 },
       populate: {
         path: "service",
         model: "service",
@@ -583,22 +577,23 @@ exports.getAllSubCategories = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
-    // console.log(category.length);
-    category = category.map((data) => {
-      return data.subCategory.map((item) => {
-        if (item.subCategory2.length == 0) return item;
-      });
-    });
 
-    category = category.map((data) => {
-      if (data.length !== 0) return data;
-    });
-    category = category.filter((data) => {
-      if (data !== null) return data;
-    });
-    category = category[0].filter((data) => {
-      if (data !== null) return data;
-    });
+    // console.log(category.length);
+    // category = category.map((data) => {
+    //   return data.subCategory.map((item) => {
+    //     if (item.subCategory2.length == 0) return item;
+    //   });
+    // });
+
+    // category = category.map((data) => {
+    //   if (data.length !== 0) return data;
+    // });
+    // category = category.filter((data) => {
+    //   if (data !== null) return data;
+    // });
+    // category = category[0].filter((data) => {
+    //   if (data !== null) return data;
+    // });
 
     return res.status(200).send({
       success: true,
@@ -613,8 +608,8 @@ exports.getAllSubCategories = async (req, res) => {
 exports.getAllCategories = async (req, res) => {
   try {
     let category = await Category.find(
-      {},
-      { _id: 1, name: 1, service: 1, subCategory: 1 }
+      { _id: req.params.id },
+      { _id: 1, name: 1, service: 1 }
     ).populate("service", {
       _id: 1,
       name: 1,
@@ -630,14 +625,14 @@ exports.getAllCategories = async (req, res) => {
     }
 
     // console.log(category.length);
-    category = category.map((data) => {
-      if (data.subCategory.length == 0) {
-        return data;
-      }
-    });
-    category = category.filter((data) => {
-      if (data !== null) return data;
-    });
+    // category = category.map((data) => {
+    //   if (data.subCategory.length == 0) {
+    //     return data;
+    //   }
+    // });
+    // category = category.filter((data) => {
+    //   if (data !== null) return data;
+    // });
     // console.log(category);
     // category = category.map((data) => {
     //   return data.subCategory.map((item) => {
@@ -709,19 +704,6 @@ exports.getSubCategoryForSubCategory2 = async (req, res) => {
       { _id: id, service: { $size: 0 } },
       { __v: 0 }
     ).populate({ path: "subCategory", select: { __v: 0 } });
-
-    //  console.log(subCategory)
-    // subCategory = subCategory.map((data) => {
-    //   if (typeof data) console.log(data);
-    // });
-
-    // subCategory
-    // data.subCategory[0].service.length;
-
-    // let subCategory = await SubCategory.find(
-    //   { service: { $size: 0 } },
-    //   { _id: 1, name: 1, subCategory2: 1, service: 1 }
-    // );
 
     if (!subCategory) {
       return res
@@ -1199,8 +1181,6 @@ exports.updateCategory = async (req, res) => {
       {
         name: body.name,
         image: body.image,
-        subCategory: body.subCategory,
-        service: body.service,
       },
       { new: true }
     );
@@ -1211,17 +1191,7 @@ exports.updateCategory = async (req, res) => {
         category,
       });
     }
-    // category = new Category({
-    //   name: body.name,
-    //   image: body.image,
-    // });
 
-    // category = await category.save();
-    // if (!category) {
-    //   return res
-    //     .status(400)
-    //     .send({ success: false, message: "Category creation failed" });
-    // }
     return res.status(200).send({
       success: true,
       message: "Category updated successfully",
@@ -1242,7 +1212,6 @@ exports.updateSubCategory = async (req, res) => {
         image: Joi.string(),
         subCategory: Joi.string(),
         service: Joi.string(),
-        categoryId: Joi.string().required(),
       })
       .required()
       .validate(body);
@@ -1253,18 +1222,6 @@ exports.updateSubCategory = async (req, res) => {
         .json({ success: false, message: error.details[0].message });
     }
 
-    let category = await Category.findById(body.categoryId);
-    if (!category) {
-      return res
-        .status(500)
-        .send({ success: false, message: "Category doesn't exist" });
-    }
-    if (category.service.length !== 0) {
-      return res.status(500).send({
-        success: false,
-        message: "Can not update subCategory, service already defined",
-      });
-    }
     let subCategory = await SubCategory.findByIdAndUpdate(
       { _id: body.id },
       { name: body.name, image: body.image },
@@ -1275,40 +1232,13 @@ exports.updateSubCategory = async (req, res) => {
         success: false,
         message: "subCategory Doesn't Exists",
         subCategory,
-        category,
       });
     }
-    // subCategory = new SubCategory({
-    //   name: body.name,
-    //   image: body.image,
-    // });
-    // subCategory = await subCategory.save();
 
-    // if (!subCategory) {
-    //   return res.status(500).send({
-    //     success: false,
-    //     message: "subCategory Creation Failed",
-    //   });
-    // }
-    // category = await Category.findByIdAndUpdate(
-    //   body.categoryId,
-    //   {
-    //     $push: { subCategory: subCategory._id },
-    //   },
-    //   { new: true }
-    // );
-
-    // if (!category) {
-    //   return res
-    //     .status(500)
-    //     .send({ success: false, message: "Category updation failed" });
-    // }
     return res.status(200).send({
       success: true,
-      message:
-        "subCategory updated successfully with updation of subcategory in category",
+      message: "subCategory updated successfully",
       subCategory,
-      category,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
@@ -1321,10 +1251,11 @@ exports.updateSubCategory2 = async (req, res) => {
 
     const { error } = Joi.object()
       .keys({
+        id: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         service: Joi.string(),
-        subCategoryId: Joi.string().required(),
+        // subCategoryId: Joi.string().required(),
       })
       .required()
       .validate(body);
@@ -1334,58 +1265,23 @@ exports.updateSubCategory2 = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    // console.log({ body });
 
-    let subCategory = await SubCategory.findById(body.subCategoryId);
-    // console.log({ subCategory });
-    if (!subCategory) {
-      return res
-        .status(500)
-        .send({ success: false, message: "subCategory doesn't exist" });
-    }
-    if (subCategory.service.length !== 0) {
-      return res.status(200).send({
-        success: false,
-        message:
-          "Can not add subCategory2, services already defined under subCategory",
-      });
-    }
-
-    let subCategory2 = await SubCategory2.findOne({ name: body.name });
-    if (subCategory2) {
-      return res.status(409).send({
-        success: false,
-        message: "subCategory2 Already Exists",
-        subCategory2,
-        subCategory,
-      });
-    }
-    subCategory2 = new SubCategory2({ name: body.name, image: body.image });
-    subCategory2 = await subCategory2.save();
-    if (!subCategory2) {
-      return res.status(400).send({
-        success: false,
-        message: "subCategory2 creation failed",
-      });
-    }
-    subCategory = await SubCategory.findByIdAndUpdate(
-      body.subCategoryId,
-      {
-        $push: { subCategory2: subCategory2._id },
-      },
+    let subCategory2 = await SubCategory2.findByIdAndUpdate(
+      { _id: body.id },
+      { name: body.name, image: body.image },
       { new: true }
     );
-    if (!subCategory) {
-      return res
-        .status(500)
-        .send({ success: false, message: "subCategory updation failed" });
+    if (!subCategory2) {
+      return res.status(409).send({
+        success: false,
+        message: "subCategory2 Doesn't Exists",
+      });
     }
+
     return res.status(200).send({
       success: true,
-      message:
-        "subCategory2 added successfully with updation of subCategory2 field under subCategory",
+      message: "subCategory2 upated successfully",
       subCategory2,
-      subCategory,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
@@ -1397,11 +1293,10 @@ exports.updateServiceToCategory = async (req, res) => {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
+        id: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         description: Joi.string(),
-        rating: Joi.number(),
-        categoryId: Joi.string().required(),
       })
       .required()
       .validate(body);
@@ -1411,57 +1306,23 @@ exports.updateServiceToCategory = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let category = await Category.findById(body.categoryId);
-    if (!category) {
-      return res
-        .status(500)
-        .send({ success: false, message: "Category doesn't exist" });
-    }
 
-    if (category.subCategory.length !== 0) {
-      return res.status(200).send({
-        success: false,
-        message:
-          "service can't be added, subCategory already defined under category",
-      });
-    }
-    let service = await Service.findOne({ name: body.name });
-    if (service) {
-      return res.status(409).send({
-        success: false,
-        message: "Service Already Exists",
-        category,
-        service,
-      });
-    }
-    service = new Service({
-      name: body.name,
-      image: body.image,
-      description: body.description,
-      rating: body.rating,
-    });
-    service = await service.save();
-    if (!service) {
-      return res
-        .status(400)
-        .send({ success: false, message: "Service creation failed" });
-    }
-    category = await Category.findByIdAndUpdate(
-      body.categoryId,
-      { $push: { service: service._id } },
+    let service = await Service.findByIdAndUpdate(
+      { _id: body.id },
+      { name: body.name, image: body.image, description: body.description },
       { new: true }
     );
-    if (!category) {
-      return res.status(500).send({
+    if (!service) {
+      return res.status(409).send({
         success: false,
-        message: "Category updation failed for service",
+        message: "Service Doesn't Exist",
       });
     }
+
     return res.status(200).send({
       success: true,
-      message: "Service added successfully to category",
+      message: "Service updated successfully to category",
       service,
-      category,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
