@@ -20,9 +20,6 @@ const {
   deleteCategory,
   deleteSubCategory2,
   deleteSubCategory,
-  //   deleteService,
-
-  //   updateService,
   deleteServiceForSubCategory2,
   deleteServiceForCategory,
   deleteServiceForSubCategory,
@@ -37,9 +34,11 @@ const {
   updateServiceToSubCategory,
   updateServiceToSubCategory2,
 } = require("../controllers/category");
+
 const { auth } = require("../middleware/auth");
 const { isAdmin } = require("../middleware/isAdmin");
 const router = express.Router();
+
 router.post("/createTest", auth, isAdmin, createTest);
 router.post("/findtest", auth, isAdmin, findTest);
 router.post("/addCategory", auth, isAdmin, addCategory);
