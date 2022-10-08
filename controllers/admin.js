@@ -234,15 +234,16 @@ exports.getPending = async (req, res) => {
     // const result = await Vendor.find({ requestStatus: "pending" })
     //   .limit(limitValue)
     //   .skip(skipValue);
-    const limitValue = +req.query.limit || 6;
-    const skipValue = +req.query.skip || 0;
+    console.log(req.query);
+    const limitValue = req.query.limit || 6;
+    const skipValue = req.query.skip || 0;
     const data = await Vendor.aggregate([
       {
         $facet: {
           totalData: [
             { $match: { requestStatus: "pending" } },
-            { $skip: skipValue },
-            { $limit: limitValue },
+            { $skip: +skipValue },
+            { $limit: +limitValue },
           ],
           totalCount: [
             { $match: { requestStatus: "pending" } },
@@ -251,8 +252,9 @@ exports.getPending = async (req, res) => {
         },
       },
     ]);
+    console.log(data);
 
-    let count = data[0].totalCount[0].count;
+    let count = data[0].totalCount;
     let result = data[0].totalData;
     if (result.length == 0) {
       return res.status(200).send({

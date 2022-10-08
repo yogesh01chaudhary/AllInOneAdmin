@@ -459,20 +459,10 @@ exports.addServiceToSubCategory2 = async (req, res) => {
 
 exports.getAllCategory = async (req, res) => {
   try {
-    // let category2 = await Category.find(
-    //   {},
-    //   { _id: 1, name: 1, subCategory: 1, service: 1 }
-    // ).populate({
-    //   path: "subCategory",
-    //   populate: { path: "subCategory2", populate: "service" },
-    // });
-
-    let category = await Category.find(
-      {},
-      { _id: 1, name: 1, subCategory: 1, service: 1 }
-    )
+    let category = await Category.find({}, { _id: 1, name: 1, subCategory: 1 })
       .populate({
         path: "subCategory",
+        select: { _id: 1, name: 1 },
         populate: {
           path: "subCategory2",
           select: { _id: 1, name: 1, service: 1 },
@@ -486,7 +476,7 @@ exports.getAllCategory = async (req, res) => {
       .populate({
         path: "subCategory",
         model: "subCategory",
-        select: { _id: 1, name: 1, service: 1, subCategory2: 1 },
+        select: { _id: 1, name: 1 },
         populate: {
           path: "service",
           model: "service",
@@ -502,7 +492,7 @@ exports.getAllCategory = async (req, res) => {
     }
     return res.status(200).send({
       success: true,
-      message: "All Category fetched successfully",
+      message: "All Category SubCategory SubCategory2 fetched successfully",
       category,
     });
   } catch (e) {
@@ -512,44 +502,28 @@ exports.getAllCategory = async (req, res) => {
 
 exports.getAllSubCategories2 = async (req, res) => {
   try {
-    let category = await Category.find(
-      {_id:req.params.id},
-      { _id: 1, name: 1, subCategory: 1, service: 1 }
+    let category = await SubCategory.find(
+      { _id: req.params.id },
+      { _id: 1, name: 1 }
     ).populate({
-      path: "subCategory",
-      model: "subCategory",
-      select: { _id: 1, name: 1, service: 1 },
+      path: "subCategory2",
+      select: { _id: 1, name: 1 },
       populate: {
-        path: "subCategory2",
-        model: "subCategory2",
-        select: { _id: 1, name: 1, service: 1 },
-        populate: {
-          path: "service",
-          model: "service",
-          select: { _id: 1, name: 1, description: 1, rating: 1, image: 1 },
-        },
+        path: "service",
+        select: { _id: 1, name: 1, description: 1, rating: 1, image: 1 },
       },
     });
-    // category = category.map((val) => {
-    //   if (val.subCategory) {
-    //     return val.subCategory.filter((val2) => {
-    //       if (val2.subCategory2.length !== 0) {
-    //         return val2;
-    //       }
-    //     });
-    //   }
-    // });
-    // console.log(m);
+
     if (!category) {
       return res
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
-
+    let subCategory = category;
     return res.status(200).send({
       success: true,
       message: "SubCategory2 fetched successfully",
-      category,
+      subCategory,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
@@ -560,11 +534,11 @@ exports.getAllSubCategories = async (req, res) => {
   try {
     let category = await Category.find(
       { _id: req.params.id },
-      { _id: 1, name: 1, subCategory: 1, service: 1 }
+      { _id: 1, name: 1 }
     ).populate({
       path: "subCategory",
       model: "subCategory",
-      select: { _id: 1, name: 1, service: 1 },
+      select: { _id: 1, name: 1 },
       populate: {
         path: "service",
         model: "service",
@@ -577,23 +551,6 @@ exports.getAllSubCategories = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
-
-    // console.log(category.length);
-    // category = category.map((data) => {
-    //   return data.subCategory.map((item) => {
-    //     if (item.subCategory2.length == 0) return item;
-    //   });
-    // });
-
-    // category = category.map((data) => {
-    //   if (data.length !== 0) return data;
-    // });
-    // category = category.filter((data) => {
-    //   if (data !== null) return data;
-    // });
-    // category = category[0].filter((data) => {
-    //   if (data !== null) return data;
-    // });
 
     return res.status(200).send({
       success: true,
@@ -609,7 +566,7 @@ exports.getAllCategories = async (req, res) => {
   try {
     let category = await Category.find(
       { _id: req.params.id },
-      { _id: 1, name: 1, service: 1 }
+      { _id: 1, name: 1 }
     ).populate("service", {
       _id: 1,
       name: 1,
@@ -624,24 +581,6 @@ exports.getAllCategories = async (req, res) => {
         .send({ success: false, message: "Something went wrong" });
     }
 
-    // console.log(category.length);
-    // category = category.map((data) => {
-    //   if (data.subCategory.length == 0) {
-    //     return data;
-    //   }
-    // });
-    // category = category.filter((data) => {
-    //   if (data !== null) return data;
-    // });
-    // console.log(category);
-    // category = category.map((data) => {
-    //   return data.subCategory.map((item) => {
-    //     if (item.service.length === 0) return item;
-    //   });
-    // });
-    // category = category.filter((data) => {
-    //   if (data !== null) return data;
-    // });
     return res.status(200).send({
       success: true,
       message: "Category fetched successfully",
@@ -656,7 +595,7 @@ exports.getCategoryForSubCategory = async (req, res) => {
   try {
     let category = await Category.find(
       { service: { $size: 0 } },
-      { _id: 1, name: 1, subCategory: 1, service: 1 }
+      { _id: 1, name: 1, subCategory: 1 }
     );
 
     if (!category) {
@@ -678,7 +617,7 @@ exports.getCategoryForService = async (req, res) => {
   try {
     let category = await Category.find(
       { subCategory: { $size: 0 } },
-      { _id: 1, name: 1, subCategory: 1, service: 1 }
+      { _id: 1, name: 1, service: 1 }
     );
 
     if (!category) {
@@ -698,7 +637,7 @@ exports.getCategoryForService = async (req, res) => {
 
 exports.getSubCategoryForSubCategory2 = async (req, res) => {
   try {
-    console.log(req.params);
+    // console.log(req.params);
     const { id } = req.params;
     let subCategory = await Category.find(
       { _id: id, service: { $size: 0 } },
@@ -730,7 +669,6 @@ exports.getSubCategoryForSubCategory2 = async (req, res) => {
 
 exports.getSubCategoryForService = async (req, res) => {
   try {
-    console.log(req.params);
     const { id } = req.params;
     let subCategory = await Category.find(
       { _id: id, subCategory2: { $size: 0 } },
@@ -763,9 +701,6 @@ exports.getSubCategoryForService = async (req, res) => {
 exports.getSubCategory2ForService = async (req, res) => {
   try {
     const { id, sid } = req.params;
-    // const { sid } = req.params;
-    console.log({ req: req.params });
-
     let subCategory = await Category.find(
       { _id: id },
       { _id: 1, name: 1, service: 1, subCategory: 1 }
@@ -890,8 +825,6 @@ exports.deleteSubCategory = async (req, res) => {
         { new: true }
       );
 
-      //   console.log(category.subCategory[subCategory.length - 1]._id);
-
       return res.status(200).send({
         success: true,
         message: "SubCategory Deleted Successfully",
@@ -932,7 +865,7 @@ exports.deleteSubCategory2 = async (req, res) => {
         .status(404)
         .send({ success: false, message: "SubCategory2 doesn't exist" });
     }
-    // console.log(subCategory2.service.length)
+
     if (subCategory2.service.length === 0) {
       let subCategory2 = await SubCategory2.findByIdAndDelete(id);
       if (!subCategory2) {
@@ -940,13 +873,13 @@ exports.deleteSubCategory2 = async (req, res) => {
           .status(404)
           .send({ success: false, message: "SubCategory2 doesn't exist" });
       }
-      //   let subCategory = await SubCategory.findById(subCategoryId);
+
       let subCategory = await SubCategory.updateOne(
         { _id: subCategoryId },
         { $pull: { subCategory2: { $in: [id] } } },
         { new: true }
       );
-      //   console.log(subCategory.subCategory2[subCategory2.length]._id);
+
       return res.status(200).send({
         success: true,
         message: "SubCategory2 Deleted Successfully",
@@ -988,14 +921,11 @@ exports.deleteServiceForCategory = async (req, res) => {
         .send({ success: false, message: "Service doesn't exist" });
     }
 
-    // let category = await Category.findById(categoryId);
     let category = await Category.updateOne(
       { _id: categoryId },
       { $pull: { service: { $in: [id] } } },
       { new: true }
     );
-    // console.log(category.service[service.length - 1]._id);
-
     return res.status(200).send({
       success: true,
       message: "Service Deleted Successfully",
@@ -1031,14 +961,11 @@ exports.deleteServiceForSubCategory = async (req, res) => {
         .send({ success: false, message: "Service doesn't exist" });
     }
 
-    // let subCategory = await SubCategory.findById(subCategoryId);
     let subCategory = await SubCategory.updateOne(
       { _id: subCategoryId },
       { $pull: { service: { $in: [id] } } },
       { new: true }
     );
-    // console.log(subCategory.service[service.length - 1]._id);
-
     return res.status(200).send({
       success: true,
       message: "Service Deleted Successfully",
@@ -1073,13 +1000,11 @@ exports.deleteServiceForSubCategory2 = async (req, res) => {
         .send({ success: false, message: "Service doesn't exist" });
     }
 
-    // let subCategory2 = await SubCategory2.findById(subCategory2Id);
     let subCategory2 = await SubCategory2.updateOne(
       { _id: subCategory2Id },
       { $pull: { service: { $in: [id] } } },
       { new: true }
     );
-    // console.log(subCategory2.service[service.length - 1]._id);
 
     return res.status(200).send({
       success: true,
@@ -1255,7 +1180,6 @@ exports.updateSubCategory2 = async (req, res) => {
         name: Joi.string().required(),
         image: Joi.string(),
         service: Joi.string(),
-        // subCategoryId: Joi.string().required(),
       })
       .required()
       .validate(body);
