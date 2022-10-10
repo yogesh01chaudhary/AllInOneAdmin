@@ -2,7 +2,6 @@ const Joi = require("joi");
 const { SubAdmin } = require("../models/subAdmin");
 exports.addSubAdmin = async (req, res) => {
   const { body } = req;
-  console.log(body);
   const { error } = Joi.object()
     .keys({
       userId: Joi.string().required(),
@@ -103,55 +102,58 @@ exports.getAllSubAdmin = async (req, res) => {
 };
 
 exports.getSubAdmin = async (req, res) => {
-  await SubAdmin.find({})
-    .then((data) => {
-      if (!data) {
-        return res
-          .status(404)
-          .send({ success: false, message: "Something went wrong", data });
-      }
-      if (data.length == 0) {
-        return res.status(200).send({
-          success: true,
-          message: "SubAdmins fetched successfully, No SubAdmins Found",
-          data,
-        });
-      }
-
-      return res.status(200).send({
-        success: true,
-        message: "SubAdmins Fetched Successfully",
-        data,
-      });
-    })
-    .catch((e) => {
-      return res.status(500).send({
+  try {
+    const { id } = req.params;
+    let subAdmin = await SubAdmin.findById(id);
+    if (!subAdmin) {
+      return res.send({
         success: false,
-        message: "Something went wrong in final catch",
-        error: e.name,
+        message: "subAdmin Not Found",
+        data: subAdmin,
       });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "subAdmin found successfully",
+      data: subAdmin,
     });
+  } catch (e) {
+    return res
+      .status(500)
+      .send({ success: false, message: "Something went wrong", error: e.name });
+  }
 };
 
 exports.updateSubAdmin = async (req, res) => {
-  await SubAdmin.find({})
+  const { params, body } = req;
+  const { error } = Joi.object()
+    .keys({
+      userId: Joi.string().required(),
+      password: Joi.string().required(),
+      responsibility1: Joi.boolean(),
+      responsibility2: Joi.boolean(),
+      responsibility3: Joi.boolean(),
+      responsibility4: Joi.boolean(),
+    })
+    .required()
+    .validate(body);
+
+  if (error) {
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message });
+  }
+  await SubAdmin.findByIdAndUpdate(params.id, body, { new: true })
     .then((data) => {
       if (!data) {
         return res
           .status(404)
           .send({ success: false, message: "Something went wrong", data });
       }
-      if (data.length == 0) {
-        return res.status(200).send({
-          success: true,
-          message: "SubAdmins fetched successfully, No SubAdmins Found",
-          data,
-        });
-      }
 
       return res.status(200).send({
         success: true,
-        message: "SubAdmins Fetched Successfully",
+        message: "SubAdmin Updated Successfully",
         data,
       });
     })
@@ -165,24 +167,17 @@ exports.updateSubAdmin = async (req, res) => {
 };
 
 exports.deleteSubAdmin = async (req, res) => {
-  await SubAdmin.find({})
+  const { params } = req;
+  await SubAdmin.findByIdAndDelete(params.id)
     .then((data) => {
       if (!data) {
         return res
           .status(404)
           .send({ success: false, message: "Something went wrong", data });
       }
-      if (data.length == 0) {
-        return res.status(200).send({
-          success: true,
-          message: "SubAdmins fetched successfully, No SubAdmins Found",
-          data,
-        });
-      }
-
       return res.status(200).send({
         success: true,
-        message: "SubAdmins Fetched Successfully",
+        message: "SubAdmin Deleted Successfully",
         data,
       });
     })
@@ -196,24 +191,24 @@ exports.deleteSubAdmin = async (req, res) => {
 };
 
 exports.deleteAllSubAdmin = async (req, res) => {
-  await SubAdmin.find({})
+  await SubAdmin.deleteMany()
     .then((data) => {
       if (!data) {
         return res
           .status(404)
           .send({ success: false, message: "Something went wrong", data });
       }
-      if (data.length == 0) {
+      if (data.deletedCount == 0) {
         return res.status(200).send({
           success: true,
-          message: "SubAdmins fetched successfully, No SubAdmins Found",
+          message: "No SubAdmins Found To Delete",
           data,
         });
       }
 
       return res.status(200).send({
         success: true,
-        message: "SubAdmins Fetched Successfully",
+        message: "All SubAdmins Deleted Successfully",
         data,
       });
     })

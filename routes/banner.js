@@ -16,7 +16,7 @@ const router = express.Router();
 router.post("/banner", auth, isAdmin, addBanner);
 router.get("/banner", auth, isAdmin, getAllBanner);
 router.get("/banner/:id", auth, isAdmin, getBanner);
-router.put("/banner/:id", auth, isAdmin, updateBanner);
+router.put("/banner", auth, isAdmin, updateBanner);
 router.delete("/banner/:id", auth, isAdmin, deleteBanner);
 router.delete("/banner", auth, isAdmin, deleteAllBanner);
 

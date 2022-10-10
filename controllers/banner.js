@@ -22,7 +22,11 @@ exports.addBanner = async (req, res) => {
     if (banner) {
       return res
         .status(409)
-        .send({ success: false, message: "Data Already Exists", data: banner });
+        .send({
+          success: false,
+          message: "Banner Already Exists",
+          data: banner,
+        });
     }
 
     banner = new Banner({ name: body.name, image: body.image });
@@ -99,7 +103,7 @@ exports.updateBanner = async (req, res) => {
   try {
     const { body } = req;
     let banner = await Banner.findByIdAndUpdate(
-      { _id: req.params.id },
+      { _id: body.id },
       { name: body.name, image: body.image },
       { new: true }
     );
