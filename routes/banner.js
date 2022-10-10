@@ -17,7 +17,7 @@ router.post("/banner", auth, isAdmin, addBanner);
 router.get("/banner", auth, isAdmin, getAllBanner);
 router.get("/banner/:id", auth, isAdmin, getBanner);
 router.put("/banner", auth, isAdmin, updateBanner);
-router.delete("/banner/:id", auth, isAdmin, deleteBanner);
-router.delete("/banner", auth, isAdmin, deleteAllBanner);
+router.delete("/banner", auth, isAdmin, deleteBanner);
+router.delete("/bannerAll", auth, isAdmin, deleteAllBanner);
 
 module.exports = router;

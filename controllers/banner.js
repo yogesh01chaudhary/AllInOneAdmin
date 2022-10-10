@@ -129,7 +129,7 @@ exports.updateBanner = async (req, res) => {
 
 exports.deleteBanner = async (req, res) => {
   try {
-    let banner = await Banner.findByIdAndDelete({ _id: req.params.id });
+    let banner = await Banner.findByIdAndDelete({ _id: req.body.id });
     if (!banner) {
       return res
         .status(200)
