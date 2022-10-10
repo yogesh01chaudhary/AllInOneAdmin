@@ -3,7 +3,6 @@ const { Banner } = require("../models/banner");
 
 exports.addBanner = async (req, res) => {
   try {
-    console.log(req.body);
     const { body } = req;
     const { error } = Joi.object()
       .keys({

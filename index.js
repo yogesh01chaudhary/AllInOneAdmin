@@ -4,7 +4,9 @@ const morgan = require("morgan");
 const router = require("./routes/admin");
 const refreshRouter = require("./routes/refreshToken");
 const categoryRouter = require("./routes/category");
-const bannerRouter=require("./routes/banner")
+const bannerRouter = require("./routes/banner");
+const bookingRouter = require("./routes/booking");
+const subAdminRouter = require("./routes/subAdmin");
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
@@ -13,6 +15,8 @@ app.use("/api/v1/admin", router);
 app.use("/api/v1/admin", refreshRouter);
 app.use("/api/v1/admin", categoryRouter);
 app.use("/api/v1/admin", bannerRouter);
+app.use("/api/v1/admin", bookingRouter);
+app.use("/api/v1/admin", subAdminRouter);
 
 require("dotenv/config");
 const { connect } = require("./connection/dbConnection");
