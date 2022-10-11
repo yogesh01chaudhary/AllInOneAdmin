@@ -12,9 +12,10 @@ exports.addBooking = async (req, res) => {
             end: Joi.string().required(),
           })
           .required(),
-        servicePrice: Joi.string(),
+        servicePrice: Joi.string().required(),
         date: Joi.string(),
         status: Joi.string(),
+        bookedBy: Joi.string().required(),
       })
       .required()
       .validate(body);
@@ -57,23 +58,27 @@ exports.getBooking = async (req, res) => {
     console.log(req.query);
     const limit = +req.query.limit || 4;
     const skip = +req.query.skip || 0;
-    let booking = await Booking.find()
-      .populate({
-        path: "servicePrice",
-        model: "servicePrice",
-        populate: [
-          {
-            path: "service",
-            model: "service",
-            select: { __v: 0 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { __v: 0 },
-          },
-        ],
-      })
+    let booking = await Booking.find({}, { __v: 0 })
+      .populate([
+        {
+          path: "servicePrice",
+          model: "servicePrice",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "service",
+              model: "service",
+              select: { __v: 0 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { __v: 0 },
+            },
+          ],
+        },
+        { path: "bookedBy", model: "user", select: { __v: 0 } },
+      ])
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(limit);
@@ -101,23 +106,27 @@ exports.getPending = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    let booking = await Booking.find({ status: "Pending" })
-      .populate({
-        path: "servicePrice",
-        model: "servicePrice",
-        populate: [
-          {
-            path: "service",
-            model: "service",
-            select: { __v: 0 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { __v: 0 },
-          },
-        ],
-      })
+    let booking = await Booking.find({ status: "Pending" }, { __v: 0 })
+      .populate([
+        {
+          path: "servicePrice",
+          model: "servicePrice",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "service",
+              model: "service",
+              select: { __v: 0 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { __v: 0 },
+            },
+          ],
+        },
+        { path: "bookedBy", model: "user", select: { __v: 0 } },
+      ])
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(limit);
@@ -151,23 +160,27 @@ exports.getAccepted = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    let booking = await Booking.find({ status: "Accepted" })
-      .populate({
-        path: "servicePrice",
-        model: "servicePrice",
-        populate: [
-          {
-            path: "service",
-            model: "service",
-            select: { __v: 0 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { __v: 0 },
-          },
-        ],
-      })
+    let booking = await Booking.find({ status: "Accepted" }, { __v: 0 })
+      .populate([
+        {
+          path: "servicePrice",
+          model: "servicePrice",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "service",
+              model: "service",
+              select: { __v: 0 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { __v: 0 },
+            },
+          ],
+        },
+        { path: "bookedBy", model: "user", select: { __v: 0 } },
+      ])
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(limit);
@@ -200,23 +213,27 @@ exports.getRejected = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    let booking = await Booking.find({ status: "Rejected" })
-      .populate({
-        path: "servicePrice",
-        model: "servicePrice",
-        populate: [
-          {
-            path: "service",
-            model: "service",
-            select: { __v: 0 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { __v: 0 },
-          },
-        ],
-      })
+    let booking = await Booking.find({ status: "Rejected" }, { __v: 0 })
+      .populate([
+        {
+          path: "servicePrice",
+          model: "servicePrice",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "service",
+              model: "service",
+              select: { __v: 0 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { __v: 0 },
+            },
+          ],
+        },
+        { path: "bookedBy", model: "user", select: { __v: 0 } },
+      ])
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(limit);
@@ -249,23 +266,27 @@ exports.getCancelled = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    let booking = await Booking.find({ status: "Cancelled" })
-      .populate({
-        path: "servicePrice",
-        model: "servicePrice",
-        populate: [
-          {
-            path: "service",
-            model: "service",
-            select: { __v: 0 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { __v: 0 },
-          },
-        ],
-      })
+    let booking = await Booking.find({ status: "Cancelled" }, { __v: 0 })
+      .populate([
+        {
+          path: "servicePrice",
+          model: "servicePrice",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "service",
+              model: "service",
+              select: { __v: 0 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { __v: 0 },
+            },
+          ],
+        },
+        { path: "bookedBy", model: "user", select: { __v: 0 } },
+      ])
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(limit);
@@ -299,23 +320,27 @@ exports.getCompleted = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    let booking = await Booking.find({ status: "complete" })
-      .populate({
-        path: "servicePrice",
-        model: "servicePrice",
-        populate: [
-          {
-            path: "service",
-            model: "service",
-            select: { __v: 0 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { __v: 0 },
-          },
-        ],
-      })
+    let booking = await Booking.find({ status: "complete" }, { __v: 0 })
+      .populate([
+        {
+          path: "servicePrice",
+          model: "servicePrice",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "service",
+              model: "service",
+              select: { __v: 0 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { __v: 0 },
+            },
+          ],
+        },
+        { path: "bookedBy", model: "user", select: { __v: 0 } },
+      ])
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(limit);

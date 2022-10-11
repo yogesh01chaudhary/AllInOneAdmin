@@ -17,6 +17,11 @@ const BookingSchema = new Schema(
       },
     },
     status: { type: String, default: "Pending" },
+    bookedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
   },
   { timestamps: true }
 );
