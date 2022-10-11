@@ -7,14 +7,15 @@ const {
   deleteSubAdmin,
   deleteAllSubAdmin,
 } = require("../controllers/subAdmin");
+const { auth } = require("../middleware/auth");
+const { isAdmin } = require("../middleware/isAdmin");
 const router = express.Router();
 
-router.post("/subAdmin", addSubAdmin);
-router.get("/subAdmin", getAllSubAdmin);
-router.get("/subAdmin/:id", getSubAdmin);
-router.put("/subAdmin/:id", updateSubAdmin);
-router.delete("/subAdmin/:id", deleteSubAdmin);
-router.delete("/subAdmin", deleteAllSubAdmin);
-
+router.post("/subAdmin", auth, isAdmin, addSubAdmin);
+router.get("/subAdminAll", auth, isAdmin, getAllSubAdmin);
+router.get("/subAdmin", auth, isAdmin, getSubAdmin);
+router.put("/subAdmin", auth, isAdmin, updateSubAdmin);
+router.delete("/subAdmin", auth, isAdmin, deleteSubAdmin);
+router.delete("/subAdminAll", auth, isAdmin, deleteAllSubAdmin);
 
 module.exports = router;

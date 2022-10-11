@@ -9,6 +9,12 @@ const SubAdminSchema = new Schema({
     type: String,
     required: true,
   },
-  responsibilities: [ResponsibilitySchema],
+  //   responsibilities: [ResponsibilitySchema],
+  responsibilities: [
+    {
+      type: String,
+    },
+  ],
+ 
 });
 exports.SubAdmin = model("subAdmin", SubAdminSchema);

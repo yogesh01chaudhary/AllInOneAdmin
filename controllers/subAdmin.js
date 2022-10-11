@@ -6,10 +6,7 @@ exports.addSubAdmin = async (req, res) => {
     .keys({
       userId: Joi.string().required(),
       password: Joi.string().required(),
-      responsibility1: Joi.boolean(),
-      responsibility2: Joi.boolean(),
-      responsibility3: Joi.boolean(),
-      responsibility4: Joi.boolean(),
+      responsibilities: Joi.array().items(Joi.string()),
     })
     .required()
     .validate(body);
@@ -29,14 +26,16 @@ exports.addSubAdmin = async (req, res) => {
       let subAdmin = new SubAdmin({
         userId: body.userId,
         password: body.password,
-        responsibilities: [
-          {
-            responsibility1: body.responsibility1,
-            responsibility2: body.responsibility2,
-            responsibility3: body.responsibility3,
-            responsibility4: body.responsibility4,
-          },
-        ],
+        responsibilities: body.responsibilities,
+        //    $push:{ responsibilities: body.responsibilities},
+        // responsibilities: [
+        //   {
+        //     responsibility1: body.responsibility1,
+        //     responsibility2: body.responsibility2,
+        //     responsibility3: body.responsibility3,
+        //     responsibility4: body.responsibility4,
+        //   },
+        // ],
       });
       subAdmin
         .save()
@@ -71,7 +70,7 @@ exports.addSubAdmin = async (req, res) => {
     });
 };
 exports.getAllSubAdmin = async (req, res) => {
-  await SubAdmin.find({})
+  await SubAdmin.find({}, { __v: 0 })
     .then((data) => {
       if (!data) {
         return res
@@ -103,7 +102,7 @@ exports.getAllSubAdmin = async (req, res) => {
 
 exports.getSubAdmin = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.body;
     let subAdmin = await SubAdmin.findById(id);
     if (!subAdmin) {
       return res.send({
@@ -128,12 +127,10 @@ exports.updateSubAdmin = async (req, res) => {
   const { params, body } = req;
   const { error } = Joi.object()
     .keys({
+      id: Joi.string().required(),
       userId: Joi.string().required(),
       password: Joi.string().required(),
-      responsibility1: Joi.boolean(),
-      responsibility2: Joi.boolean(),
-      responsibility3: Joi.boolean(),
-      responsibility4: Joi.boolean(),
+      responsibilities: Joi.array().items(Joi.string()),
     })
     .required()
     .validate(body);
@@ -143,7 +140,15 @@ exports.updateSubAdmin = async (req, res) => {
       .status(400)
       .json({ success: false, message: error.details[0].message });
   }
-  await SubAdmin.findByIdAndUpdate(params.id, body, { new: true })
+  await SubAdmin.findByIdAndUpdate(
+    body.id,
+    {
+      userId: body.userId,
+      password: body.password,
+      $push: { responsibilities: body.responsibilities },
+    },
+    { new: true }
+  )
     .then((data) => {
       if (!data) {
         return res
@@ -167,8 +172,8 @@ exports.updateSubAdmin = async (req, res) => {
 };
 
 exports.deleteSubAdmin = async (req, res) => {
-  const { params } = req;
-  await SubAdmin.findByIdAndDelete(params.id)
+  const { body } = req;
+  await SubAdmin.findByIdAndDelete(body.id)
     .then((data) => {
       if (!data) {
         return res
