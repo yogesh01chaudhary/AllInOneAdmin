@@ -3,13 +3,11 @@ const BookingSchema = new Schema(
   {
     date: {
       type: String,
-    //   default: Date.now(),
     },
-    service: {
+    servicePrice: {
       type: Schema.Types.ObjectId,
-      ref: "service",
+      ref: "servicePrice",
     },
-    //   service: [ServiceSchema],
     timeSlot: {
       start: {
         type: String,
@@ -17,9 +15,6 @@ const BookingSchema = new Schema(
       end: {
         type: String,
       },
-    },
-    price: {
-      type: Number,
     },
     status: { type: String, default: "Pending" },
   },

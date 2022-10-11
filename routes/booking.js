@@ -12,18 +12,25 @@ const {
   complete,
   getCompleted,
 } = require("../controllers/booking");
+const { auth } = require("../middleware/auth");
+const { isAdmin } = require("../middleware/isAdmin");
 const router = express.Router();
 
+//admin
+router.get("/booking",auth,isAdmin, getBooking);
+router.get("/bookingPending",auth,isAdmin, getPending);
+router.get("/bookingAccepted", auth,isAdmin,getAccepted);
+router.get("/bookingRejected",auth,isAdmin, getRejected);
+router.get("/bookingCancelled",auth,isAdmin, getCancelled);
+router.get("/bookingCompleted",auth,isAdmin, getCompleted);
+
+//vendor
+router.put("/accept", accept);
+router.put("/reject", reject);
+router.put("/complete", complete);
+
+//user
 router.post("/booking", addBooking);
-router.get("/booking", getBooking);
-router.get("/bookingPending", getPending);
-router.get("/bookingAccepted", getAccepted);
-router.get("/bookingRejected", getRejected);
-router.get("/bookingCancelled", getCancelled);
-router.get("/bookingCompleted", getCompleted);
-router.put("/accept/:id", accept);
-router.put("/reject/:id", reject);
-router.put("/cancel/:id", cancel);
-router.put("/complete/:id", complete);
+router.put("/cancel", cancel);
 
 module.exports = router;

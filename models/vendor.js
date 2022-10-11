@@ -1,5 +1,5 @@
 const { Schema, model } = require("mongoose");
-const vendorSchema = new Schema({
+const VendorSchema = new Schema({
   firstName: {
     type: String,
   },
@@ -34,4 +34,4 @@ const vendorSchema = new Schema({
     default: "pending",
   },
 });
-exports.Vendor = model("vendor", vendorSchema);
+exports.Vendor = model("vendor", VendorSchema);

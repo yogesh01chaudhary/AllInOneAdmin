@@ -12,8 +12,7 @@ exports.addBooking = async (req, res) => {
             end: Joi.string().required(),
           })
           .required(),
-        price: Joi.number(),
-        service: Joi.string(),
+        servicePrice: Joi.string(),
         date: Joi.string(),
         status: Joi.string(),
       })
@@ -43,7 +42,6 @@ exports.addBooking = async (req, res) => {
         return res.status(500).send({
           success: false,
           message: "Something went wrong",
-          //   data: booking,
           e: e.name,
         });
       });
@@ -56,7 +54,30 @@ exports.addBooking = async (req, res) => {
 
 exports.getBooking = async (req, res) => {
   try {
-    let booking = await Booking.find().populate("service");
+    console.log(req.query);
+    const limit = +req.query.limit || 4;
+    const skip = +req.query.skip || 0;
+    let booking = await Booking.find()
+      .populate({
+        path: "servicePrice",
+        model: "servicePrice",
+        populate: [
+          {
+            path: "service",
+            model: "service",
+            select: { __v: 0 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { __v: 0 },
+          },
+        ],
+      })
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(limit);
+
     if (!booking) {
       return res.status(500).send({
         success: false,
@@ -78,7 +99,28 @@ exports.getBooking = async (req, res) => {
 
 exports.getPending = async (req, res) => {
   try {
-    let booking = await Booking.find({ status: "Pending" }).populate("service");
+    const skip = +req.query.skip || 0;
+    const limit = +req.query.limit || 2;
+    let booking = await Booking.find({ status: "Pending" })
+      .populate({
+        path: "servicePrice",
+        model: "servicePrice",
+        populate: [
+          {
+            path: "service",
+            model: "service",
+            select: { __v: 0 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { __v: 0 },
+          },
+        ],
+      })
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(limit);
     if (booking.length === 0) {
       return res.status(200).send({
         success: true,
@@ -107,9 +149,28 @@ exports.getPending = async (req, res) => {
 
 exports.getAccepted = async (req, res) => {
   try {
-    let booking = await Booking.find({ status: "Accepted" }).populate(
-      "service"
-    );
+    const skip = +req.query.skip || 0;
+    const limit = +req.query.limit || 2;
+    let booking = await Booking.find({ status: "Accepted" })
+      .populate({
+        path: "servicePrice",
+        model: "servicePrice",
+        populate: [
+          {
+            path: "service",
+            model: "service",
+            select: { __v: 0 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { __v: 0 },
+          },
+        ],
+      })
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(limit);
     if (booking.length === 0) {
       return res.status(200).send({
         success: true,
@@ -137,9 +198,28 @@ exports.getAccepted = async (req, res) => {
 };
 exports.getRejected = async (req, res) => {
   try {
-    let booking = await Booking.find({ status: "Rejected" }).populate(
-      "service"
-    );
+    const skip = +req.query.skip || 0;
+    const limit = +req.query.limit || 2;
+    let booking = await Booking.find({ status: "Rejected" })
+      .populate({
+        path: "servicePrice",
+        model: "servicePrice",
+        populate: [
+          {
+            path: "service",
+            model: "service",
+            select: { __v: 0 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { __v: 0 },
+          },
+        ],
+      })
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(limit);
     if (booking.length === 0) {
       return res.status(200).send({
         success: true,
@@ -167,9 +247,28 @@ exports.getRejected = async (req, res) => {
 };
 exports.getCancelled = async (req, res) => {
   try {
-    let booking = await Booking.find({ status: "Cancelled" }).populate(
-      "service"
-    );
+    const skip = +req.query.skip || 0;
+    const limit = +req.query.limit || 2;
+    let booking = await Booking.find({ status: "Cancelled" })
+      .populate({
+        path: "servicePrice",
+        model: "servicePrice",
+        populate: [
+          {
+            path: "service",
+            model: "service",
+            select: { __v: 0 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { __v: 0 },
+          },
+        ],
+      })
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(limit);
     if (booking.length === 0) {
       return res.status(200).send({
         success: true,
@@ -198,9 +297,29 @@ exports.getCancelled = async (req, res) => {
 
 exports.getCompleted = async (req, res) => {
   try {
-    let booking = await Booking.find({ status: "Completed" }).populate(
-      "service"
-    );
+    const skip = +req.query.skip || 0;
+    const limit = +req.query.limit || 2;
+    let booking = await Booking.find({ status: "complete" })
+      .populate({
+        path: "servicePrice",
+        model: "servicePrice",
+        populate: [
+          {
+            path: "service",
+            model: "service",
+            select: { __v: 0 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { __v: 0 },
+          },
+        ],
+      })
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(limit);
+
     if (booking.length === 0) {
       return res.status(200).send({
         success: true,
@@ -233,9 +352,18 @@ exports.reject = async (req, res) => {
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
+        // timeSlot: Joi.object()
+        //   .keys({
+        //     start: Joi.string().required(),
+        //     end: Joi.string().required(),
+        //   })
+        //   .required(),
+        // servicePrice: Joi.string(),
+        // date: Joi.string(),
+        // status: Joi.string(),
       })
       .required()
-      .validate(params);
+      .validate(body);
 
     if (error) {
       return res
@@ -243,7 +371,7 @@ exports.reject = async (req, res) => {
         .json({ success: false, message: error.details[0].message });
     }
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      body.id,
       { status: "Rejected" },
       {
         new: true,
@@ -252,7 +380,7 @@ exports.reject = async (req, res) => {
     if (!booking) {
       return res
         .staus(400)
-        .send({ success: false, message: "No Booking Found" });
+        .send({ success: false, message: "No Rejected Booking Found" });
     }
     return res
       .status(200)
@@ -272,7 +400,7 @@ exports.accept = async (req, res) => {
         id: Joi.string().required(),
       })
       .required()
-      .validate(params);
+      .validate(body);
 
     if (error) {
       return res
@@ -280,7 +408,7 @@ exports.accept = async (req, res) => {
         .json({ success: false, message: error.details[0].message });
     }
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      body.id,
       { status: "Accepted" },
       {
         new: true,
@@ -289,7 +417,7 @@ exports.accept = async (req, res) => {
     if (!booking) {
       return res
         .staus(400)
-        .send({ success: false, message: "No Booking Found" });
+        .send({ success: false, message: "No Accepted Booking Found" });
     }
     return res
       .status(200)
@@ -309,7 +437,7 @@ exports.cancel = async (req, res) => {
         id: Joi.string().required(),
       })
       .required()
-      .validate(params);
+      .validate(body);
 
     if (error) {
       return res
@@ -317,7 +445,7 @@ exports.cancel = async (req, res) => {
         .json({ success: false, message: error.details[0].message });
     }
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      body.id,
       { status: "Cancelled" },
       {
         new: true,
@@ -326,7 +454,7 @@ exports.cancel = async (req, res) => {
     if (!booking) {
       return res
         .staus(400)
-        .send({ success: false, message: "No Booking Found" });
+        .send({ success: false, message: "No Cancelled Booking Found" });
     }
     return res
       .status(200)
@@ -338,7 +466,7 @@ exports.cancel = async (req, res) => {
   }
 };
 
-exports.complete= async (req, res) => {
+exports.complete = async (req, res) => {
   try {
     const { params, body } = req;
     const { error } = Joi.object()
@@ -346,7 +474,7 @@ exports.complete= async (req, res) => {
         id: Joi.string().required(),
       })
       .required()
-      .validate(params);
+      .validate(body);
 
     if (error) {
       return res
@@ -354,7 +482,7 @@ exports.complete= async (req, res) => {
         .json({ success: false, message: error.details[0].message });
     }
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      body.id,
       { status: "complete" },
       {
         new: true,
