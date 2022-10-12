@@ -31,15 +31,6 @@ exports.addSubAdmin = async (req, res) => {
         userId: body.userId,
         password: hashedPassword,
         responsibilities: body.responsibilities,
-        //    $push:{ responsibilities: body.responsibilities},
-        // responsibilities: [
-        //   {
-        //     responsibility1: body.responsibility1,
-        //     responsibility2: body.responsibility2,
-        //     responsibility3: body.responsibility3,
-        //     responsibility4: body.responsibility4,
-        //   },
-        // ],
       });
 
       subAdmin
@@ -108,7 +99,6 @@ exports.getAllSubAdmin = async (req, res) => {
 exports.getSubAdmin = async (req, res) => {
   try {
     const { id } = req.body;
-    console.log(id);
     let subAdmin = await SubAdmin.findById(id, {
       __v: 0,
       password: 0,
@@ -138,8 +128,6 @@ exports.updateSubAdmin = async (req, res) => {
   const { error } = Joi.object()
     .keys({
       id: Joi.string().required(),
-      //   userId: Joi.string().required(),
-      //   password: Joi.string().required(),
       responsibilities: Joi.array().items(Joi.string()),
     })
     .required()

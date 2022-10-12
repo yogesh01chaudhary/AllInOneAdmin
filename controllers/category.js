@@ -479,31 +479,61 @@ exports.addServiceToSubCategory2 = async (req, res) => {
 
 exports.getAllCategory = async (req, res) => {
   try {
-    let category = await Category.find({}, { _id: 1, name: 1, subCategory: 1 })
+    const skip = req.query.skip || 0;
+    const limit = req.query.limit || 6;
+    let category = await Category.find(
+      {},
+      { _id: 1, name: 1, subCategory: 1, createdAt: 1, updatedAt: 1 }
+    )
       .populate({
         path: "subCategory",
-        select: { _id: 1, name: 1 },
+        select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
         populate: {
           path: "subCategory2",
-          select: { _id: 1, name: 1, service: 1 },
+          select: { _id: 1, name: 1, service: 1, createdAt: 1, updatedAt: 1 },
           populate: {
             path: "service",
             model: "service",
-            select: { _id: 1, name: 1, description: 1, rating: 1, image: 1 },
+            select: {
+              _id: 1,
+              name: 1,
+              description: 1,
+              rating: 1,
+              image: 1,
+              createdAt: 1,
+              updatedAt: 1,
+            },
           },
         },
       })
       .populate({
         path: "subCategory",
         model: "subCategory",
-        select: { _id: 1, name: 1 },
+        select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
         populate: {
           path: "service",
           model: "service",
-          select: { _id: 1, name: 1, description: 1, rating: 1, image: 1 },
+          select: {
+            _id: 1,
+            name: 1,
+            description: 1,
+            rating: 1,
+            image: 1,
+            createdAt: 1,
+            updatedAt: 1,
+          },
         },
       })
-      .populate("service", { name: 1, description: 1, rating: 1, image: 1 });
+      .populate("service", {
+        name: 1,
+        description: 1,
+        rating: 1,
+        image: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      })
+      .skip(skip)
+      .limit(limit);
 
     if (!category) {
       return res
@@ -524,13 +554,21 @@ exports.getAllSubCategories2 = async (req, res) => {
   try {
     let category = await SubCategory.find(
       { _id: req.params.id },
-      { _id: 1, name: 1 }
+      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
     ).populate({
       path: "subCategory2",
-      select: { _id: 1, name: 1 },
+      select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
       populate: {
         path: "service",
-        select: { _id: 1, name: 1, description: 1, rating: 1, image: 1 },
+        select: {
+          _id: 1,
+          name: 1,
+          description: 1,
+          rating: 1,
+          image: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
       },
     });
 
@@ -554,15 +592,23 @@ exports.getAllSubCategories = async (req, res) => {
   try {
     let category = await Category.find(
       { _id: req.params.id },
-      { _id: 1, name: 1 }
+      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
     ).populate({
       path: "subCategory",
       model: "subCategory",
-      select: { _id: 1, name: 1 },
+      select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
       populate: {
         path: "service",
         model: "service",
-        select: { _id: 1, name: 1, description: 1, rating: 1, image: 1 },
+        select: {
+          _id: 1,
+          name: 1,
+          description: 1,
+          rating: 1,
+          image: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
       },
     });
 
@@ -586,7 +632,7 @@ exports.getAllCategories = async (req, res) => {
   try {
     let category = await Category.find(
       { _id: req.params.id },
-      { _id: 1, name: 1 }
+      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
     ).populate("service", {
       _id: 1,
       name: 1,
@@ -615,7 +661,7 @@ exports.getCategoryForSubCategory = async (req, res) => {
   try {
     let category = await Category.find(
       { service: { $size: 0 } },
-      { _id: 1, name: 1, subCategory: 1 }
+      { _id: 1, name: 1, subCategory: 1, createdAt: 1, updatedAt: 1 }
     );
 
     if (!category) {
@@ -637,7 +683,7 @@ exports.getCategoryForService = async (req, res) => {
   try {
     let category = await Category.find(
       { subCategory: { $size: 0 } },
-      { _id: 1, name: 1, service: 1 }
+      { _id: 1, name: 1, service: 1, createdAt: 1, updatedAt: 1 }
     );
 
     if (!category) {
@@ -657,17 +703,22 @@ exports.getCategoryForService = async (req, res) => {
 
 exports.getSubCategoryForSubCategory2 = async (req, res) => {
   try {
-    // console.log(req.params);
+    console.log(req.params);
     const { id } = req.params;
     let subCategory = await Category.find(
       { _id: id, service: { $size: 0 } },
       { __v: 0 }
     ).populate({ path: "subCategory", select: { __v: 0 } });
-
+    console.log(subCategory);
     if (!subCategory) {
       return res
         .status(500)
         .send({ success: false, message: "Something went wrong" });
+    }
+    if (subCategory.length == 0) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Data Found", subCategory });
     }
     subCategory = subCategory.map((data) => {
       return data.subCategory.map((item) => {
@@ -700,6 +751,11 @@ exports.getSubCategoryForService = async (req, res) => {
         .status(500)
         .send({ success: false, message: "Something went wrong" });
     }
+    if (subCategory.length == 0) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Data Found", subCategory });
+    }
     subCategory = subCategory.map((data) => {
       return data.subCategory.map((item) => {
         if (item.subCategory2.length === 0) return item;
@@ -723,7 +779,14 @@ exports.getSubCategory2ForService = async (req, res) => {
     const { id, sid } = req.params;
     let subCategory = await Category.find(
       { _id: id },
-      { _id: 1, name: 1, service: 1, subCategory: 1 }
+      {
+        _id: 1,
+        name: 1,
+        service: 1,
+        subCategory: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      }
     ).populate({
       path: "subCategory",
       select: { __v: 0 },
@@ -738,6 +801,11 @@ exports.getSubCategory2ForService = async (req, res) => {
       return res
         .status(500)
         .send({ success: false, message: "Something went wrong" });
+    }
+    if (subCategory.length == 0) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Data Found", subCategory });
     }
     subCategory = subCategory.map((data) => {
       return data.subCategory.map((item) => {
