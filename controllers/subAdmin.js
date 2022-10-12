@@ -75,7 +75,7 @@ exports.addSubAdmin = async (req, res) => {
     });
 };
 exports.getAllSubAdmin = async (req, res) => {
-  await SubAdmin.find({}, { __v: 0, password: 0, userId: 0 })
+  await SubAdmin.find({}, { __v: 0, password: 0 })
     .then((data) => {
       if (!data) {
         return res
@@ -112,7 +112,6 @@ exports.getSubAdmin = async (req, res) => {
     let subAdmin = await SubAdmin.findById(id, {
       __v: 0,
       password: 0,
-      userId: 0,
     });
 
     if (!subAdmin) {
@@ -151,11 +150,11 @@ exports.updateSubAdmin = async (req, res) => {
       .status(400)
       .json({ success: false, message: error.details[0].message });
   }
-  
+
   await SubAdmin.findByIdAndUpdate(
     body.id,
     {
-     responsibilities: body.responsibilities ,
+      responsibilities: body.responsibilities,
     },
     { new: true }
   )
