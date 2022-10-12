@@ -1,4 +1,5 @@
 const Joi = require("joi");
+const bcrypt = require("bcrypt");
 const { SubAdmin } = require("../models/subAdmin");
 exports.addSubAdmin = async (req, res) => {
   const { body } = req;
@@ -17,15 +18,18 @@ exports.addSubAdmin = async (req, res) => {
       .json({ success: false, message: error.details[0].message });
   }
   await SubAdmin.findOne({ userId: body.userId })
-    .then((data) => {
+    .then(async (data) => {
       if (data) {
         return res
           .status(409)
           .send({ success: false, message: "subAdmin already exists", data });
       }
+
+      let hashedPassword = await bcrypt.hash(body.password, 10);
+      console.log(hashedPassword);
       let subAdmin = new SubAdmin({
         userId: body.userId,
-        password: body.password,
+        password: hashedPassword,
         responsibilities: body.responsibilities,
         //    $push:{ responsibilities: body.responsibilities},
         // responsibilities: [
@@ -37,6 +41,7 @@ exports.addSubAdmin = async (req, res) => {
         //   },
         // ],
       });
+
       subAdmin
         .save()
         .then((data) => {
@@ -70,7 +75,7 @@ exports.addSubAdmin = async (req, res) => {
     });
 };
 exports.getAllSubAdmin = async (req, res) => {
-  await SubAdmin.find({}, { __v: 0 })
+  await SubAdmin.find({}, { __v: 0, password: 0, userId: 0 })
     .then((data) => {
       if (!data) {
         return res
@@ -103,7 +108,13 @@ exports.getAllSubAdmin = async (req, res) => {
 exports.getSubAdmin = async (req, res) => {
   try {
     const { id } = req.body;
-    let subAdmin = await SubAdmin.findById(id);
+    console.log(id);
+    let subAdmin = await SubAdmin.findById(id, {
+      __v: 0,
+      password: 0,
+      userId: 0,
+    });
+
     if (!subAdmin) {
       return res.send({
         success: false,
@@ -128,8 +139,8 @@ exports.updateSubAdmin = async (req, res) => {
   const { error } = Joi.object()
     .keys({
       id: Joi.string().required(),
-      userId: Joi.string().required(),
-      password: Joi.string().required(),
+      //   userId: Joi.string().required(),
+      //   password: Joi.string().required(),
       responsibilities: Joi.array().items(Joi.string()),
     })
     .required()
@@ -140,12 +151,11 @@ exports.updateSubAdmin = async (req, res) => {
       .status(400)
       .json({ success: false, message: error.details[0].message });
   }
+  
   await SubAdmin.findByIdAndUpdate(
     body.id,
     {
-      userId: body.userId,
-      password: body.password,
-      $push: { responsibilities: body.responsibilities },
+     responsibilities: body.responsibilities ,
     },
     { new: true }
   )
