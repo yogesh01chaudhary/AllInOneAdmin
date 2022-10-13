@@ -1,5 +1,6 @@
 const RefreshToken = require("../models/refreshToken");
 const jwt = require("jsonwebtoken");
+
 exports.refreshToken = async (req, res) => {
   console.log({ body: req.body });
   const { refreshToken: requestToken } = req.body;

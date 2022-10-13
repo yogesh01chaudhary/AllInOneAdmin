@@ -7,4 +7,5 @@ router.post("/price", addServicePrice);
 router.put("/price", updateServicePrice);
 router.delete("/price", deleteServicePrice);
 router.get("/price", getServicePrice);
+
 module.exports = router;

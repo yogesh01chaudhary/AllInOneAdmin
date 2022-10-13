@@ -1,8 +1,8 @@
 const { Booking } = require("../models/booking");
 const Joi = require("joi");
+
 exports.addBooking = async (req, res) => {
   try {
-    console.log(req.body);
     const { body } = req;
     const { error } = Joi.object()
       .keys({
@@ -209,6 +209,7 @@ exports.getAccepted = async (req, res) => {
       .send({ success: false, message: "Something went wrong", error: e.name });
   }
 };
+
 exports.getRejected = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;
@@ -262,6 +263,7 @@ exports.getRejected = async (req, res) => {
       .send({ success: false, message: "Something went wrong", error: e.name });
   }
 };
+
 exports.getCancelled = async (req, res) => {
   try {
     const skip = +req.query.skip || 0;

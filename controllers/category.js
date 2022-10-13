@@ -703,13 +703,12 @@ exports.getCategoryForService = async (req, res) => {
 
 exports.getSubCategoryForSubCategory2 = async (req, res) => {
   try {
-    console.log(req.params);
     const { id } = req.params;
     let subCategory = await Category.find(
       { _id: id, service: { $size: 0 } },
       { __v: 0 }
     ).populate({ path: "subCategory", select: { __v: 0 } });
-    console.log(subCategory);
+
     if (!subCategory) {
       return res
         .status(500)

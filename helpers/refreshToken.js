@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const RefreshToken = require("../models/refreshToken");
+
 exports.createToken = async (admin) => {
 //   let expiredAt = new Date();
 

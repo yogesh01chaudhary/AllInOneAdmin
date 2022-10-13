@@ -1,5 +1,6 @@
 const Joi = require("joi");
 const { ServicePrice } = require("../models/servicePrice");
+
 exports.addServicePrice = async (req, res) => {
   try {
     const { body } = req;
@@ -12,7 +13,7 @@ exports.addServicePrice = async (req, res) => {
       })
       .required()
       .validate(body);
-// console.log("hhh")
+
     if (error) {
       return res
         .status(400)

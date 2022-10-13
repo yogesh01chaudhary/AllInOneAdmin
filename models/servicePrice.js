@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+
 const ServicePriceSchema = new Schema({
   vendor: {
     type: Schema.Types.ObjectId,
@@ -15,4 +16,5 @@ const ServicePriceSchema = new Schema({
     required: true,
   },
 });
+
 exports.ServicePrice = model("servicePrice", ServicePriceSchema);

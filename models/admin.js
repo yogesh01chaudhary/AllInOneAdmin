@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+
 const adminSchema = new Schema({
   userId: {
     type: String,
@@ -9,4 +10,5 @@ const adminSchema = new Schema({
     required: true,
   },
 });
+
 exports.Admin = model("admin", adminSchema);

@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+
 const ServiceSchema = new Schema(
   {
     name: {
@@ -18,4 +19,5 @@ const ServiceSchema = new Schema(
     timestamps: true,
   }
 );
+
 exports.Service = model("service", ServiceSchema);

@@ -11,8 +11,9 @@ const {
   getAccepted,
   getPending,
 } = require("../controllers/admin");
+
 const { auth } = require("../middleware/auth");
-const { isAdmin } = require("../middleware/isAdmin");
+const { isAdmin, isSubAdmin } = require("../middleware/isAdmin");
 
 // router.post("/signUpAdmin", signUpAdmin);
 router.post("/loginAdmin", loginAdmin);

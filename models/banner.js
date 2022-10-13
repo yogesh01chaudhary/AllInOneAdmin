@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+
 const BannerSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -8,4 +9,5 @@ const BannerSchema = new Schema(
 );
 
 const Banner = model("banner", BannerSchema);
+
 module.exports = { Banner };

@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const ResponsibilitySchema = require("./responsibility");
+
 const SubAdminSchema = new Schema({
   userId: {
     type: String,
@@ -17,4 +18,5 @@ const SubAdminSchema = new Schema({
   ],
  
 });
+
 exports.SubAdmin = model("subAdmin", SubAdminSchema);

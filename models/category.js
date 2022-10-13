@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+
 const CategorySchema = new Schema(
   {
     name: {
@@ -24,4 +25,5 @@ const CategorySchema = new Schema(
     timestamps: true,
   }
 );
+
 exports.Category = model("category", CategorySchema);

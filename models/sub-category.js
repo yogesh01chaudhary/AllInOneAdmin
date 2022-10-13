@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+
 const SubCategorySchema = new Schema(
   {
     name: {
@@ -24,4 +25,5 @@ const SubCategorySchema = new Schema(
     timestamps: true,
   }
 );
+
 exports.SubCategory = model("subCategory", SubCategorySchema);

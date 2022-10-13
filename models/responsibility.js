@@ -1,4 +1,5 @@
 const { Schema } = require("mongoose");
+
 const ResponsibilitySchema = new Schema({
   responsibility1: {
     type: Boolean,
@@ -17,4 +18,5 @@ const ResponsibilitySchema = new Schema({
     default: false,
   },
 });
+
 module.exports = ResponsibilitySchema;
