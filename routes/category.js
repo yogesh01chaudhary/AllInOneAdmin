@@ -33,6 +33,22 @@ const {
   updateServiceToCategory,
   updateServiceToSubCategory,
   updateServiceToSubCategory2,
+  addSilver,
+  getServices,
+  getService,
+  updateVendorSilver,
+  updateVendorGold,
+  updateVendorPlatinum,
+  rateSilver,
+  rateGold,
+  ratePlatinum,
+  updateRateSilver,
+  updateRateGold,
+  updateRatePlatinum,
+  getAllServicesForSubCategories2,
+  getAllServicesForCategories,
+  getAllServicesForSubCategories,
+  updateService,
 } = require("../controllers/category");
 
 const { auth } = require("../middleware/auth");
@@ -52,10 +68,27 @@ router.post(
   isAdmin,
   addServiceToSubCategory2
 );
-router.get("/getAllCategories/:id", auth, isAdmin, getAllCategories);
-router.get("/getAllSubCategories/:id", auth, isAdmin, getAllSubCategories);
-router.get("/getAllSubCategories2/:id", auth, isAdmin, getAllSubCategories2);
-router.get("/getAllCategory", auth, isAdmin, getAllCategory);
+router.get(
+  "/getAllServicesForCategories/:id",
+  auth,
+  isAdmin,
+  getAllServicesForCategories
+);
+router.get(
+  "/getAllServicesForSubCategories/:id",
+  auth,
+  isAdmin,
+  getAllServicesForSubCategories
+);
+router.get(
+  "/getAllServicesForSubCategories2/:id",
+  auth,
+  isAdmin,
+  getAllServicesForSubCategories2
+);
+router.get("/getAllCategories", auth, isAdmin, getAllCategories);
+router.get("/getAllSubCategories/", auth, isAdmin, getAllSubCategories);
+router.get("/getAllSubCategories2/", auth, isAdmin, getAllSubCategories2);
 router.get(
   "/getCategoryForSubCategory",
   auth,
@@ -104,8 +137,21 @@ router.delete("/allCategories", auth, isAdmin, allCategories);
 router.put("/category", auth, isAdmin, updateCategory);
 router.put("/subCategory", auth, isAdmin, updateSubCategory);
 router.put("/subCategory2", auth, isAdmin, updateSubCategory2);
-router.put("/serviceCategory", auth, isAdmin, updateServiceToCategory);
-router.put("/serviceSubCategory", auth, isAdmin, updateServiceToSubCategory);
-router.put("/serviceSubCategory2", auth, isAdmin, updateServiceToSubCategory2);
+router.put("/service", auth, isAdmin, updateService);
+
+//addPriceWithVendorByAdmin
+router.put("/silver", auth, isAdmin, updateVendorSilver);
+router.put("/gold", auth, isAdmin, updateVendorGold);
+router.put("/platinum", auth, isAdmin, updateVendorPlatinum);
+router.get("/services", auth, isAdmin, getServices);
+router.get("/service", auth, isAdmin, getService);
+
+//user rate service
+router.post("/rateSilver", rateSilver);
+router.post("/rateGold", rateGold);
+router.post("/ratePlatinum", ratePlatinum);
+router.put("/rateSilver", updateRateSilver);
+router.put("/rateGold", updateRateGold);
+router.put("/ratePlatinum", updateRatePlatinum);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const { PackageSchema } = require("./packageSchema");
 
 const ServiceSchema = new Schema(
   {
@@ -11,9 +12,9 @@ const ServiceSchema = new Schema(
     description: {
       type: String,
     },
-    rating: {
-      type: Number,
-    },
+    silver: PackageSchema,
+    gold: PackageSchema,
+    platinum: PackageSchema,
   },
   {
     timestamps: true,

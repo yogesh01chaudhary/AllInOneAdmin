@@ -4,6 +4,7 @@ const { Category } = require("../models/category");
 const { SubCategory } = require("../models/sub-category");
 const { SubCategory2 } = require("../models/sub-category2");
 const { Service } = require("../models/services");
+const { findOneAndUpdate } = require("../models/test");
 
 exports.createTest = async (req, res) => {
   const { body } = req;
@@ -249,11 +250,28 @@ exports.addServiceToCategory = async (req, res) => {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
+        categoryId: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         description: Joi.string(),
-        rating: Joi.number(),
-        categoryId: Joi.string().required(),
+        silver: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        gold: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        platinum: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
       })
       .required()
       .validate(body);
@@ -284,7 +302,6 @@ exports.addServiceToCategory = async (req, res) => {
         break;
       }
     }
-    console.log(p);
     if (p) {
       return res.status(409).json({ message: "Service already exist" });
     }
@@ -292,7 +309,21 @@ exports.addServiceToCategory = async (req, res) => {
       name: body.name,
       image: body.image,
       description: body.description,
-      rating: body.rating,
+      silver: {
+        description: body.silver.description,
+        price: body.silver.price,
+        image: body.silver.image,
+      },
+      gold: {
+        description: body.gold.description,
+        price: body.gold.price,
+        image: body.gold.image,
+      },
+      platinum: {
+        description: body.platinum.description,
+        price: body.platinum.price,
+        image: body.silver.image,
+      },
     });
     service = await service.save();
     if (!service) {
@@ -327,11 +358,28 @@ exports.addServiceToSubCategory = async (req, res) => {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
+        subCategoryId: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         description: Joi.string(),
-        rating: Joi.number(),
-        subCategoryId: Joi.string().required(),
+        silver: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        gold: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        platinum: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
       })
       .required()
       .validate(body);
@@ -372,7 +420,21 @@ exports.addServiceToSubCategory = async (req, res) => {
       name: body.name,
       image: body.image,
       description: body.description,
-      rating: body.rating,
+      silver: {
+        description: body.silver.description,
+        price: body.silver.price,
+        image: body.silver.image,
+      },
+      gold: {
+        description: body.gold.description,
+        price: body.gold.price,
+        image: body.gold.image,
+      },
+      platinum: {
+        description: body.platinum.description,
+        price: body.platinum.price,
+        image: body.silver.image,
+      },
     });
     service = await service.save();
     if (!service) {
@@ -407,11 +469,28 @@ exports.addServiceToSubCategory2 = async (req, res) => {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
+        subCategory2Id: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
         description: Joi.string(),
-        rating: Joi.number(),
-        subCategory2Id: Joi.string().required(),
+        silver: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        gold: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        platinum: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
       })
       .required()
       .validate(body);
@@ -446,7 +525,21 @@ exports.addServiceToSubCategory2 = async (req, res) => {
       name: body.name,
       image: body.image,
       description: body.description,
-      rating: body.rating,
+      silver: {
+        description: body.silver.description,
+        price: body.silver.price,
+        image: body.silver.image,
+      },
+      gold: {
+        description: body.gold.description,
+        price: body.gold.price,
+        image: body.gold.image,
+      },
+      platinum: {
+        description: body.platinum.description,
+        price: body.platinum.price,
+        image: body.silver.image,
+      },
     });
     service = await service.save();
     if (!service) {
@@ -477,39 +570,78 @@ exports.addServiceToSubCategory2 = async (req, res) => {
   }
 };
 
-exports.getAllCategory = async (req, res) => {
+exports.getAllCategories = async (req, res) => {
   try {
     const skip = req.query.skip || 0;
     const limit = req.query.limit || 6;
-    let category = await Category.find(
-      {},
-      { _id: 1, name: 1, subCategory: 1, createdAt: 1, updatedAt: 1 }
-    )
+    let category = await Category.find({}, { __v: 0 })
       .populate({
         path: "subCategory",
-        select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
+        select: { __v: 0 },
         populate: {
           path: "subCategory2",
-          select: { _id: 1, name: 1, service: 1, createdAt: 1, updatedAt: 1 },
+          select: { __v: 0 },
           populate: {
             path: "service",
             model: "service",
             select: {
-              _id: 1,
-              name: 1,
-              description: 1,
-              rating: 1,
-              image: 1,
-              createdAt: 1,
-              updatedAt: 1,
+              __v: 0,
             },
+            populate: [
+              {
+                path: "silver",
+                select: { __v: 0 },
+                populate: [
+                  {
+                    path: "rating.ratedBy",
+                    model: "user",
+                    select: { firstName: 1 },
+                  },
+                  {
+                    path: "vendor",
+                    model: "vendor",
+                    select: { firstName: 1 },
+                  },
+                ],
+              },
+              {
+                path: "gold",
+                populate: [
+                  {
+                    path: "rating.ratedBy",
+                    model: "user",
+                    select: { firstName: 1 },
+                  },
+                  {
+                    path: "vendor",
+                    model: "vendor",
+                    select: { firstName: 1 },
+                  },
+                ],
+              },
+              {
+                path: "platinum",
+                populate: [
+                  {
+                    path: "rating.ratedBy",
+                    model: "user",
+                    select: { firstName: 1 },
+                  },
+                  {
+                    path: "vendor",
+                    model: "vendor",
+                    select: { firstName: 1 },
+                  },
+                ],
+              },
+            ],
           },
         },
       })
       .populate({
         path: "subCategory",
         model: "subCategory",
-        select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
+        select: { __v: 0 },
         populate: {
           path: "service",
           model: "service",
@@ -522,15 +654,110 @@ exports.getAllCategory = async (req, res) => {
             createdAt: 1,
             updatedAt: 1,
           },
+          populate: [
+            {
+              path: "silver",
+              select: { __v: 0 },
+              populate: [
+                {
+                  path: "rating.ratedBy",
+                  model: "user",
+                  select: { firstName: 1 },
+                },
+                {
+                  path: "vendor",
+                  model: "vendor",
+                  select: { firstName: 1 },
+                },
+              ],
+            },
+            {
+              path: "gold",
+              populate: [
+                {
+                  path: "rating.ratedBy",
+                  model: "user",
+                  select: { firstName: 1 },
+                },
+                {
+                  path: "vendor",
+                  model: "vendor",
+                  select: { firstName: 1 },
+                },
+              ],
+            },
+            {
+              path: "platinum",
+              populate: [
+                {
+                  path: "rating.ratedBy",
+                  model: "user",
+                  select: { firstName: 1 },
+                },
+                {
+                  path: "vendor",
+                  model: "vendor",
+                  select: { firstName: 1 },
+                },
+              ],
+            },
+          ],
         },
       })
-      .populate("service", {
-        name: 1,
-        description: 1,
-        rating: 1,
-        image: 1,
-        createdAt: 1,
-        updatedAt: 1,
+      .populate({
+        path: "service",
+        model: "service",
+        select: {
+          ___v: 0,
+        },
+        populate: [
+          {
+            path: "silver",
+            select: { __v: 0 },
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "gold",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "platinum",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+        ],
       })
       .skip(skip)
       .limit(limit);
@@ -550,65 +777,69 @@ exports.getAllCategory = async (req, res) => {
   }
 };
 
-exports.getAllSubCategories2 = async (req, res) => {
-  try {
-    let category = await SubCategory.find(
-      { _id: req.params.id },
-      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
-    ).populate({
-      path: "subCategory2",
-      select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
-      populate: {
-        path: "service",
-        select: {
-          _id: 1,
-          name: 1,
-          description: 1,
-          rating: 1,
-          image: 1,
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      },
-    });
-
-    if (!category) {
-      return res
-        .status(500)
-        .send({ success: false, message: "Something went wrong" });
-    }
-    let subCategory = category;
-    return res.status(200).send({
-      success: true,
-      message: "SubCategory2 fetched successfully",
-      subCategory,
-    });
-  } catch (e) {
-    return res.status(500).send({ success: false, error: e.name });
-  }
-};
-
 exports.getAllSubCategories = async (req, res) => {
   try {
     let category = await Category.find(
-      { _id: req.params.id },
-      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
+      { "subCategory.1": { $exists: true } },
+      { __v: 0, service: 0 }
     ).populate({
       path: "subCategory",
       model: "subCategory",
-      select: { _id: 1, name: 1, createdAt: 1, updatedAt: 1 },
+      select: { __v: 0, subCategory2: 0 },
       populate: {
         path: "service",
         model: "service",
         select: {
-          _id: 1,
-          name: 1,
-          description: 1,
-          rating: 1,
-          image: 1,
-          createdAt: 1,
-          updatedAt: 1,
+          __v: 0,
         },
+        populate: [
+          {
+            path: "silver",
+            select: { __v: 0 },
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "gold",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "platinum",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+        ],
       },
     });
 
@@ -628,17 +859,122 @@ exports.getAllSubCategories = async (req, res) => {
   }
 };
 
-exports.getAllCategories = async (req, res) => {
+exports.getAllSubCategories2 = async (req, res) => {
+  try {
+    let category = await Category.find(
+      // { $expr: { $gt: [{ $size: "$subCategory" }, 1] } },
+      // {
+      //   $expr: {
+      //     $gt: [{ $size: { $ifNull: ["$subCategory", []] } }, 0],
+      //   },
+      // },
+      // {subCategory:{$where:`this.subCategory.length >= 1`}},
+      // { "subCategory.1": { $exists: true } },
+      {
+        subCategory: {
+          // $elemMatch: {
+          //   subCategory2: {
+          $exists: true,
+          $ne: [],
+          $not: {
+            $size: 1,
+          },
+        },
+        //   },
+        // },
+      },
+      { __v: 0, service: 0 }
+    ).populate({
+      path: "subCategory",
+      model: "subCategory",
+      select: { __v: 0, service: 0 },
+      populate: {
+        path: "subCategory2",
+        select: { __v: 0 },
+        populate: {
+          path: "service",
+          select: {
+            __v: 0,
+          },
+          populate: [
+            {
+              path: "silver",
+              select: { __v: 0 },
+              populate: [
+                {
+                  path: "rating.ratedBy",
+                  model: "user",
+                  select: { firstName: 1 },
+                },
+                {
+                  path: "vendor",
+                  model: "vendor",
+                  select: { firstName: 1 },
+                },
+              ],
+            },
+            {
+              path: "gold",
+              populate: [
+                {
+                  path: "rating.ratedBy",
+                  model: "user",
+                  select: { firstName: 1 },
+                },
+                {
+                  path: "vendor",
+                  model: "vendor",
+                  select: { firstName: 1 },
+                },
+              ],
+            },
+            {
+              path: "platinum",
+              populate: [
+                {
+                  path: "rating.ratedBy",
+                  model: "user",
+                  select: { firstName: 1 },
+                },
+                {
+                  path: "vendor",
+                  model: "vendor",
+                  select: { firstName: 1 },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    if (!category) {
+      return res
+        .status(500)
+        .send({ success: false, message: "Something went wrong" });
+    }
+    let subCategory = category;
+    return res.status(200).send({
+      success: true,
+      message: "SubCategory2 fetched successfully",
+      category: subCategory,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.getAllServicesForCategories = async (req, res) => {
   try {
     let category = await Category.find(
       { _id: req.params.id },
       { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
-    ).populate("service", {
-      _id: 1,
-      name: 1,
-      description: 1,
-      rating: 1,
-      image: 1,
+    ).populate({
+      path: "service",
+      model: "service",
+      select: {
+        __v: 0,
+      },
     });
 
     if (!category) {
@@ -649,8 +985,66 @@ exports.getAllCategories = async (req, res) => {
 
     return res.status(200).send({
       success: true,
-      message: "Category fetched successfully",
+      message: "Services For Category fetched successfully",
       category,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.getAllServicesForSubCategories = async (req, res) => {
+  try {
+    let services = await SubCategory.find(
+      { _id: req.params.id, subCategory2: { $size: 0 } },
+      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
+    ).populate("service", {
+      _id: 1,
+      name: 1,
+      description: 1,
+      rating: 1,
+      image: 1,
+    });
+
+    if (!services) {
+      return res
+        .status(500)
+        .send({ success: false, message: "Something went wrong" });
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "Services For SubCategories fetched successfully",
+      services,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.getAllServicesForSubCategories2 = async (req, res) => {
+  try {
+    let services = await SubCategory2.find(
+      { _id: req.params.id },
+      { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
+    ).populate("service", {
+      _id: 1,
+      name: 1,
+      description: 1,
+      rating: 1,
+      image: 1,
+    });
+
+    if (!services) {
+      return res
+        .status(500)
+        .send({ success: false, message: "Something went wrong" });
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "Services For SubCategories2 fetched successfully",
+      services,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
@@ -1222,7 +1616,7 @@ exports.updateSubCategory = async (req, res) => {
         id: Joi.string().required(),
         name: Joi.string().required(),
         image: Joi.string(),
-        subCategory: Joi.string(),
+        subCategory2: Joi.string(),
         service: Joi.string(),
       })
       .required()
@@ -1299,7 +1693,7 @@ exports.updateSubCategory2 = async (req, res) => {
   }
 };
 
-exports.updateServiceToCategory = async (req, res) => {
+exports.updateService = async (req, res) => {
   try {
     const { body } = req;
     const { error } = Joi.object()
@@ -1308,6 +1702,24 @@ exports.updateServiceToCategory = async (req, res) => {
         name: Joi.string().required(),
         image: Joi.string(),
         description: Joi.string(),
+        silver: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        gold: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
+        platinum: Joi.object().keys({
+          price: Joi.number().required(),
+          description: Joi.string().required(),
+          image: Joi.string(),
+          vendor: Joi.string(),
+        }),
       })
       .required()
       .validate(body);
@@ -1320,7 +1732,26 @@ exports.updateServiceToCategory = async (req, res) => {
 
     let service = await Service.findByIdAndUpdate(
       { _id: body.id },
-      { name: body.name, image: body.image, description: body.description },
+      {
+        name: body.name,
+        image: body.image,
+        description: body.description,
+        silver: {
+          description: body.silver.description,
+          price: body.silver.price,
+          image: body.silver.image,
+        },
+        gold: {
+          description: body.gold.description,
+          price: body.gold.price,
+          image: body.gold.image,
+        },
+        platinum: {
+          description: body.platinum.description,
+          price: body.platinum.price,
+          image: body.silver.image,
+        },
+      },
       { new: true }
     );
     if (!service) {
@@ -1340,16 +1771,183 @@ exports.updateServiceToCategory = async (req, res) => {
   }
 };
 
-exports.updateServiceToSubCategory = async (req, res) => {
+//***************************************************************************************************************************** */
+
+// exports.updateServiceToSubCategory = async (req, res) => {
+//   try {
+//     const { body } = req;
+//     const { error } = Joi.object()
+//       .keys({
+//         name: Joi.string().required(),
+//         image: Joi.string(),
+//         description: Joi.string(),
+//         rating: Joi.number(),
+//         subCategoryId: Joi.string().required(),
+//       })
+//       .required()
+//       .validate(body);
+
+//     if (error) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: error.details[0].message });
+//     }
+//     let subCategory = await SubCategory.findById(body.subCategoryId);
+//     if (!subCategory) {
+//       return res
+//         .status(500)
+//         .send({ success: false, message: "Subcategory doesn't exist" });
+//     }
+//     if (subCategory.subCategory2.length !== 0) {
+//       return res.status(200).send({
+//         success: false,
+//         message:
+//           "Can not add service,subCategory2 already defined under subCategory",
+//       });
+//     }
+//     let service = await Service.findOne({ name: body.name });
+//     if (service) {
+//       return res.status(409).send({
+//         success: false,
+//         message: "Service Already Exists",
+//         subCategory,
+//         service,
+//       });
+//     }
+//     service = new Service({
+//       name: body.name,
+//       image: body.image,
+//       description: body.description,
+//       silver: {
+//         description: body.silver.description,
+//         price: body.silver.price,
+//         image: body.silver.image,
+//       },
+//       gold: {
+//         description: body.gold.description,
+//         price: body.gold.price,
+//         image: body.gold.image,
+//       },
+//       platinum: {
+//         description: body.platinum.description,
+//         price: body.platinum.price,
+//         image: body.silver.image,
+//       },
+//     });
+//     service = await service.save();
+//     if (!service) {
+//       return res
+//         .status(400)
+//         .send({ success: false, message: "Service creation failed" });
+//     }
+//     subCategory = await SubCategory.findByIdAndUpdate(
+//       body.subCategoryId,
+//       { $push: { service: service._id } },
+//       { new: true }
+//     );
+//     if (!subCategory) {
+//       return res.status(500).send({
+//         success: false,
+//         message: "SubCategory updation failed for adding service",
+//       });
+//     }
+//     return res.status(200).send({
+//       success: true,
+//       message: "Service added successfully to subCategory",
+//       service,
+//       subCategory,
+//     });
+//   } catch (e) {
+//     return res.status(500).send({ success: false, error: e.name });
+//   }
+// };
+
+// exports.updateServiceToSubCategory2 = async (req, res) => {
+//   try {
+//     const { body } = req;
+//     const { error } = Joi.object()
+//       .keys({
+//         name: Joi.string().required(),
+//         image: Joi.string(),
+//         description: Joi.string(),
+//         rating: Joi.number(),
+//         subCategory2Id: Joi.string().required(),
+//       })
+//       .required()
+//       .validate(body);
+
+//     if (error) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: error.details[0].message });
+//     }
+//     let service = await Service.findOne({ name: body.name });
+//     if (service) {
+//       return res.status(409).send({
+//         success: false,
+//         message: "Service Already Exists",
+//         service,
+//       });
+//     }
+//     service = new Service({
+//       name: body.name,
+//       image: body.image,
+//       description: body.description,
+//       silver: {
+//         description: body.silver.description,
+//         price: body.silver.price,
+//         image: body.silver.image,
+//       },
+//       gold: {
+//         description: body.gold.description,
+//         price: body.gold.price,
+//         image: body.gold.image,
+//       },
+//       platinum: {
+//         description: body.platinum.description,
+//         price: body.platinum.price,
+//         image: body.silver.image,
+//       },
+//     });
+//     service = await service.save();
+//     if (!service) {
+//       return res
+//         .status(400)
+//         .send({ success: false, message: "Service creation failed" });
+//     }
+//     let subCategory2 = await SubCategory2.findByIdAndUpdate(
+//       body.subCategory2Id,
+//       { $push: { service: service._id } },
+//       { new: true }
+//     );
+//     console.log(subCategory2.service);
+//     if (!subCategory2) {
+//       return res.status(500).send({
+//         success: false,
+//         message: "SubCategory2 updation failed for adding service",
+//       });
+//     }
+//     return res.status(200).send({
+//       success: true,
+//       message: "Service added successfully to subCategory2",
+//       service,
+//       subCategory2,
+//     });
+//   } catch (e) {
+//     return res.status(500).send({ success: false, error: e.name });
+//   }
+// };
+
+//***************************************service*******************************************************************//
+exports.updateVendorSilver = async (req, res) => {
   try {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
-        name: Joi.string().required(),
-        image: Joi.string(),
-        description: Joi.string(),
-        rating: Joi.number(),
-        subCategoryId: Joi.string().required(),
+        serviceId: Joi.string().required(),
+        silver: Joi.object().keys({
+          vendor: Joi.string(),
+        }),
       })
       .required()
       .validate(body);
@@ -1359,72 +1957,45 @@ exports.updateServiceToSubCategory = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let subCategory = await SubCategory.findById(body.subCategoryId);
-    if (!subCategory) {
-      return res
-        .status(500)
-        .send({ success: false, message: "Subcategory doesn't exist" });
-    }
-    if (subCategory.subCategory2.length !== 0) {
-      return res.status(200).send({
-        success: false,
-        message:
-          "Can not add service,subCategory2 already defined under subCategory",
-      });
-    }
-    let service = await Service.findOne({ name: body.name });
-    if (service) {
-      return res.status(409).send({
-        success: false,
-        message: "Service Already Exists",
-        subCategory,
-        service,
-      });
-    }
-    service = new Service({
-      name: body.name,
-      image: body.image,
-      description: body.description,
-      rating: body.rating,
-    });
-    service = await service.save();
-    if (!service) {
-      return res
-        .status(400)
-        .send({ success: false, message: "Service creation failed" });
-    }
-    subCategory = await SubCategory.findByIdAndUpdate(
-      body.subCategoryId,
-      { $push: { service: service._id } },
+
+    let service = await Service.findByIdAndUpdate(
+      {
+        _id: body.serviceId,
+      },
+      {
+        $addToSet: { "silver.vendor": body.silver.vendor },
+      },
       { new: true }
     );
-    if (!subCategory) {
-      return res.status(500).send({
-        success: false,
-        message: "SubCategory updation failed for adding service",
-      });
+
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Service Found" });
     }
     return res.status(200).send({
       success: true,
-      message: "Service added successfully to subCategory",
+      message: "Silver Service Updated Successfully",
       service,
-      subCategory,
     });
   } catch (e) {
-    return res.status(500).send({ success: false, error: e.name });
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
   }
 };
 
-exports.updateServiceToSubCategory2 = async (req, res) => {
+exports.updateVendorGold = async (req, res) => {
   try {
     const { body } = req;
     const { error } = Joi.object()
       .keys({
-        name: Joi.string().required(),
-        image: Joi.string(),
-        description: Joi.string(),
-        rating: Joi.number(),
-        subCategory2Id: Joi.string().required(),
+        serviceId: Joi.string().required(),
+        gold: Joi.object().keys({
+          vendor: Joi.string(),
+        }),
       })
       .required()
       .validate(body);
@@ -1434,45 +2005,607 @@ exports.updateServiceToSubCategory2 = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let service = await Service.findOne({ name: body.name });
-    if (service) {
-      return res.status(409).send({
-        success: false,
-        message: "Service Already Exists",
-        service,
-      });
-    }
-    service = new Service({
-      name: body.name,
-      image: body.image,
-      description: body.description,
-      rating: body.rating,
-    });
-    service = await service.save();
-    if (!service) {
-      return res
-        .status(400)
-        .send({ success: false, message: "Service creation failed" });
-    }
-    let subCategory2 = await SubCategory2.findByIdAndUpdate(
-      body.subCategory2Id,
-      { $push: { service: service._id } },
+
+    let service = await Service.findByIdAndUpdate(
+      {
+        _id: body.serviceId,
+      },
+      {
+        $addToSet: { "gold.vendor": body.gold.vendor },
+      },
       { new: true }
     );
-    console.log(subCategory2.service);
-    if (!subCategory2) {
-      return res.status(500).send({
-        success: false,
-        message: "SubCategory2 updation failed for adding service",
+
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Service Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Gold Service Updated Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.updateVendorPlatinum = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        platinum: Joi.object().keys({
+          vendor: Joi.string(),
+        }),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findByIdAndUpdate(
+      {
+        _id: body.serviceId,
+      },
+      {
+        $addToSet: { "platinum.vendor": body.platinum.vendor },
+      },
+      { new: true }
+    );
+    console.log(service);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Service Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Platinum Service Updated Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.rateSilver = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        userId: Joi.string().required(),
+        star: Joi.number(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+
+    let service = await Service.findOneAndUpdate(
+      {
+        _id: body.serviceId,
+        "silver.rating.ratedBy": { $nin: body.userId },
+      },
+      {
+        $addToSet: {
+          "silver.rating": {
+            ratedBy: body.userId,
+            star: body.star,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!service) {
+      return res.status(404).send({
+        success: true,
+        message: "No Data Found, Maybe User Already rated/ Service Not Exists",
       });
     }
     return res.status(200).send({
       success: true,
-      message: "Service added successfully to subCategory2",
+      message: "User Rated Silver Successfully",
       service,
-      subCategory2,
     });
   } catch (e) {
-    return res.status(500).send({ success: false, error: e.name });
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.rateGold = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        userId: Joi.string().required(),
+        star: Joi.number(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findOneAndUpdate(
+      {
+        _id: body.serviceId,
+        "gold.rating.ratedBy": { $nin: body.userId },
+      },
+      {
+        $addToSet: {
+          "gold.rating": {
+            ratedBy: body.userId,
+            star: body.star,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    console.log(service);
+    if (!service) {
+      return res.status(404).send({
+        success: true,
+        message: "No Data Found, Maybe User Already rated/ Service Not Exists",
+      });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "User Rated  Gold Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.ratePlatinum = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        userId: Joi.string().required(),
+        star: Joi.number(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findOneAndUpdate(
+      {
+        _id: body.serviceId,
+        "platinum.rating.ratedBy": { $nin: body.userId },
+      },
+      {
+        $addToSet: {
+          "platinum.rating": {
+            ratedBy: body.userId,
+            star: body.star,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    console.log(service);
+    if (!service) {
+      return res.status(404).send({
+        success: true,
+        message: "No Data Found, Maybe User Already rated/ Service Not Exists",
+      });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "User Rated Platinum Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.updateRateSilver = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        userId: Joi.string().required(),
+        star: Joi.number(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+
+    let service = await Service.findOneAndUpdate(
+      {
+        _id: body.serviceId,
+        "silver.rating.ratedBy": { $eq: body.userId },
+      },
+      {
+        $set: {
+          "silver.rating.$": {
+            ratedBy: body.userId,
+            star: body.star,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    console.log(service);
+    if (!service) {
+      return res.status(404).send({
+        success: true,
+        message: "No Service Found/ MayBe User Not Rated",
+      });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "User Rated Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.updateRateGold = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        userId: Joi.string().required(),
+        star: Joi.number(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findOneAndUpdate(
+      {
+        _id: body.serviceId,
+        "gold.rating.ratedBy": { $in: body.userId },
+      },
+
+      {
+        $set: {
+          "gold.rating.$": {
+            ratedBy: body.userId,
+            star: body.star,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    // console.log(service);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Service Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "User Rated Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.updateRatePlatinum = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        userId: Joi.string().required(),
+        star: Joi.number(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findOneAndUpdate(
+      {
+        _id: body.serviceId,
+        "platinum.rating.ratedBy": { $nin: body.userId },
+      },
+
+      {
+        $set: {
+          "platinum.rating.$": {
+            ratedBy: body.userId,
+            star: body.star,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    console.log(service);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Service Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "User Rated Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
+  }
+};
+
+exports.getServices = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        name: Joi.string(),
+        image: Joi.string(),
+        description: Joi.string(),
+        silver: Joi.object().keys({
+          description: Joi.string(),
+          vendor: Joi.array().items(Joi.string()),
+          rating: Joi.array().items(
+            Joi.object().keys({
+              ratedBy: Joi.string().required(),
+              star: Joi.number(),
+            })
+          ),
+        }),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.find({}, { __v: 0 }).populate([
+      {
+        path: "silver",
+        select: { __v: 0 },
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "gold",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "platinum",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+    ]);
+
+    if (!service) {
+      return res
+        .status(500)
+        .send({ success: flase, message: "Something went wrong" });
+    }
+
+    if (service.length == 0) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Servcie Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Service Fetched Successfully",
+      service,
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .send({ success: false, message: "Something went wrong", error: e.name });
+  }
+};
+
+exports.getService = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        name: Joi.string(),
+        image: Joi.string(),
+        description: Joi.string(),
+        silver: Joi.object().keys({
+          description: Joi.string(),
+          vendor: Joi.array().items(Joi.string()),
+          rating: Joi.array().items(
+            Joi.object().keys({
+              ratedBy: Joi.string().required(),
+              star: Joi.number(),
+            })
+          ),
+        }),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findById(
+      { _id: body.serviceId },
+      { __v: 0 }
+    ).populate([
+      {
+        path: "silver",
+        select: { __v: 0 },
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "gold",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "platinum",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+    ]);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Servcie Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Service Fetched Successfully",
+      service,
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .send({ success: false, message: "Something went wrong", error: e.name });
   }
 };

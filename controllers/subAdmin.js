@@ -102,6 +102,7 @@ exports.loginSubAdmin = async (req, res) => {
       success: true,
       message: "subAdmin logged in Successsfully!",
       token,
+      responsibility: subAdmin.responsibilities
     });
   } catch (e) {
     return res.status(400).send({
