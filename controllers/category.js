@@ -572,8 +572,8 @@ exports.addServiceToSubCategory2 = async (req, res) => {
 
 exports.getAllCategories = async (req, res) => {
   try {
-    const skip = req.query.skip || 0;
-    const limit = req.query.limit || 6;
+    // const skip = req.query.skip || 0;
+    // const limit = req.query.limit || 6;
     let category = await Category.find({}, { __v: 0 })
       .populate({
         path: "subCategory",
@@ -758,9 +758,9 @@ exports.getAllCategories = async (req, res) => {
             ],
           },
         ],
-      })
-      .skip(skip)
-      .limit(limit);
+      });
+    // .skip(skip)
+    // .limit(limit);
 
     if (!category) {
       return res
@@ -958,6 +958,72 @@ exports.getAllSubCategories2 = async (req, res) => {
       success: true,
       message: "SubCategory2 fetched successfully",
       category: subCategory,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.getSubCategoryData = async (req, res) => {
+  try {
+    let category = await Category.find(
+      { _id: req.params.id },
+      { __v: 0, service: 0 }
+    ).populate({
+      path: "subCategory",
+      model: "subCategory",
+      select: { __v: 0, subCategory2: 0 },
+      populate: {
+        path: "service",
+        model: "service",
+        select: {
+          __v: 0,
+        },
+      },
+    });
+
+    if (!category) {
+      return res
+        .status(500)
+        .send({ success: false, message: "Something went wrong" });
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "SubCategory fetched successfully",
+      category,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.getSubCategory2Data = async (req, res) => {
+  try {
+    console.log(req.params);
+    let subCategory = await SubCategory.findById(
+      { _id: req.params.id },
+      { __v: 0, service: 0 }
+    ).populate({
+      path: "subCategory2",
+      model: "subCategory2",
+      select: { __v: 0 },
+      populate: {
+        path: "service",
+        model: "service",
+        select: { __v: 0 },
+      },
+    });
+
+    if (!subCategory) {
+      return res
+        .status(500)
+        .send({ success: false, message: "Something went wrong" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "SubCategory2 fetched successfully",
+      subCategory,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });

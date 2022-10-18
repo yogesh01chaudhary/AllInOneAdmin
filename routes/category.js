@@ -49,6 +49,8 @@ const {
   getAllServicesForCategories,
   getAllServicesForSubCategories,
   updateService,
+  getSubCategoryData,
+  getSubCategory2Data,
 } = require("../controllers/category");
 
 const { auth } = require("../middleware/auth");
@@ -89,6 +91,9 @@ router.get(
 router.get("/getAllCategories", auth, isAdmin, getAllCategories);
 router.get("/getAllSubCategories/", auth, isAdmin, getAllSubCategories);
 router.get("/getAllSubCategories2/", auth, isAdmin, getAllSubCategories2);
+router.get("/getSubCategoryData/:id", auth, isAdmin, getSubCategoryData);
+router.get("/getSubCategory2Data/:id", auth, isAdmin, getSubCategory2Data);
+
 router.get(
   "/getCategoryForSubCategory",
   auth,

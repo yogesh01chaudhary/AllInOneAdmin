@@ -25,6 +25,7 @@ exports.isSubAdmin = async (req, res, next) => {
     if (!subAdmin) {
       return res.status(200).send({ success: true, message: "Not a subAdmin" });
     }
+    req.user.responsibilities = subAdmin.responsibilities;
     next();
   } catch (e) {
     return res
