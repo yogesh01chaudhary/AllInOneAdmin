@@ -1771,20 +1771,14 @@ exports.updateService = async (req, res) => {
         silver: Joi.object().keys({
           price: Joi.number().required(),
           description: Joi.string().required(),
-          image: Joi.string(),
-          vendor: Joi.string(),
         }),
         gold: Joi.object().keys({
           price: Joi.number().required(),
           description: Joi.string().required(),
-          image: Joi.string(),
-          vendor: Joi.string(),
         }),
         platinum: Joi.object().keys({
           price: Joi.number().required(),
           description: Joi.string().required(),
-          image: Joi.string(),
-          vendor: Joi.string(),
         }),
       })
       .required()
