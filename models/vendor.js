@@ -29,7 +29,7 @@ const VendorSchema = new Schema({
     type: String,
     unique: true,
   },
-  pasword: {
+  password: {
     type: String,
   },
   address: {
@@ -78,5 +78,12 @@ const VendorSchema = new Schema({
       type: String,
     },
   },
+  services:[{
+    type:Schema.Types.ObjectId,
+    ref:'service'
+  }],
+  requestedService:[{
+    type:String
+  }]
 });
 exports.Vendor = model("vendor", VendorSchema);

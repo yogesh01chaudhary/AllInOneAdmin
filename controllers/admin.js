@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const { Vendor } = require("../models/vendor");
 const { sendMail, createPassword } = require("../helpers/sendPassword");
+const Joi = require("joi");
+const { SubAdmin } = require("../models/subAdmin");
 
 // exports.signUpAdmin = async (req, res) => {
 //   try {
@@ -129,6 +131,8 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+//******************************************************vendors************************************************************** */
+
 exports.getVendors = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
@@ -138,6 +142,7 @@ exports.getVendors = async (req, res) => {
         $facet: {
           totalData: [
             { $match: {} },
+            { $unwind: { path: "$services" } },
             { $skip: skipValue },
             { $limit: limitValue },
           ],
@@ -147,9 +152,19 @@ exports.getVendors = async (req, res) => {
     ]);
     let count = data[0].totalCount[0].count;
     let vendors = data[0].totalData;
-    // console.log("data", data[0].totalData);
-    // let vendors = await Vendor.find({}).limit(limitValue).skip(skipValue);
-    // console.log(count,vendors)
+
+    // vendors = await Vendor.find({})
+    //   .populate({ path: "services", model: "service", select: { __v: 0 } })
+    //   .limit(limitValue)
+
+    //   .skip(skipValue);
+
+    vendors = await Vendor.populate(vendors, {
+      path: "services",
+      model: "service",
+      select: { __v: 0 },
+    });
+
     if (!vendors) {
       return res
         .status(200)
@@ -178,11 +193,11 @@ exports.acceptRequest = async (req, res) => {
       });
     }
     let generatedPassword = await createPassword(8, true, true);
-   
-    let hashedPassword=await bcrypt.hash(generatedPassword,10)
+
+    let hashedPassword = await bcrypt.hash(generatedPassword, 10);
     vendor = await Vendor.findByIdAndUpdate(
       body.id,
-      { password: hashedPassword},
+      { password: hashedPassword },
       { new: true }
     );
 
@@ -370,6 +385,76 @@ exports.getAccepted = async (req, res) => {
     return res.status(500).send({ success: false, error: e.name });
   }
 };
+
+exports.getVendorsServiceRequest = async (req, res) => {
+  try {
+    let service = await Vendor.find({}, { requestedService: 1 });
+    if (!service) {
+      return res
+        .status(400)
+        .send({ success: false, message: "Something went wrong" });
+    }
+    if (service.length === 0) {
+      return res.status(400).send({
+        success: true,
+        message: "No Vendors Requested For Service",
+        service,
+      });
+    }
+    return res.status(200).send({
+      succes: true,
+      message: "Service Request Fetched Successfully",
+      service,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.message });
+  }
+};
+
+exports.grantServicesToVendorById = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+
+    let service = await Vendor.findById(
+      { _id: req.body.id },
+      { requestedService: 1 }
+    );
+    if (!service) {
+      return res
+        .status(400)
+        .send({ success: false, message: "No Vendor Found" });
+    }
+
+    let vendor = await Vendor.updateOne(
+      { _id: service._id },
+      { $addToSet: { services: { $each: service.requestedService } } },
+      { new: true }
+    );
+
+    return res.status(200).send({
+      succes: true,
+      message: "Service Request Provided Successfully",
+      service,
+      vendor,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.message });
+  }
+};
+
+//*******************************************subAdmin******************************************************************** */
 
 exports.addSubAdmin = async (req, res) => {
   const { body } = req;
@@ -592,4 +677,14 @@ exports.deleteAllSubAdmin = async (req, res) => {
         error: e.name,
       });
     });
+};
+
+exports.sendRequestToVendors = async (req, res) => {
+  const { body } = req;
+
+  let vendors = await Vendor.find({ services: { $in: [body.id] } }, { _id: 1 });
+
+  return res
+    .status(200)
+    .send({ success: true, message: "Request Send To All Vendors", vendors });
 };
