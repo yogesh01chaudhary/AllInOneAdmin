@@ -4,8 +4,8 @@ const { Category } = require("../models/category");
 const { SubCategory } = require("../models/sub-category");
 const { SubCategory2 } = require("../models/sub-category2");
 const { Service } = require("../models/services");
-const { findOneAndUpdate } = require("../models/test");
 
+//*******************************************test*************************************************************************//
 exports.createTest = async (req, res) => {
   const { body } = req;
   const test = new Test(body);
@@ -42,6 +42,7 @@ exports.findTest = async (req, res) => {
   }
 };
 
+//*******************************************add*************************************************************************//
 exports.addCategory = async (req, res) => {
   try {
     const { body } = req;
@@ -570,6 +571,7 @@ exports.addServiceToSubCategory2 = async (req, res) => {
   }
 };
 
+//*******************************************getAllCategoriesWithPopulated*************************************************************************//
 exports.getAllCategories = async (req, res) => {
   try {
     // const skip = req.query.skip || 0;
@@ -777,6 +779,7 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
+//*******************************************getAllSubCategoryWithPopulated*************************************************************************//
 exports.getAllSubCategories = async (req, res) => {
   try {
     let category = await Category.find(
@@ -859,6 +862,7 @@ exports.getAllSubCategories = async (req, res) => {
   }
 };
 
+//*******************************************getAllSubCategory2WithPopulated*************************************************************************//
 exports.getAllSubCategories2 = async (req, res) => {
   try {
     let category = await Category.find(
@@ -964,6 +968,7 @@ exports.getAllSubCategories2 = async (req, res) => {
   }
 };
 
+//*******************************************getAllSubCategoryDataForCategoryById*************************************************************************//
 exports.getSubCategoryData = async (req, res) => {
   try {
     let category = await Category.find(
@@ -979,6 +984,54 @@ exports.getSubCategoryData = async (req, res) => {
         select: {
           __v: 0,
         },
+        populate: [
+          {
+            path: "silver",
+            select: { __v: 0 },
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "gold",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "platinum",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+        ],
       },
     });
 
@@ -998,6 +1051,7 @@ exports.getSubCategoryData = async (req, res) => {
   }
 };
 
+//*******************************************getAllSubCategory2DataForSubCategoryById*************************************************************************//
 exports.getSubCategory2Data = async (req, res) => {
   try {
     console.log(req.params);
@@ -1012,6 +1066,54 @@ exports.getSubCategory2Data = async (req, res) => {
         path: "service",
         model: "service",
         select: { __v: 0 },
+        populate: [
+          {
+            path: "silver",
+            select: { __v: 0 },
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "gold",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+          {
+            path: "platinum",
+            populate: [
+              {
+                path: "rating.ratedBy",
+                model: "user",
+                select: { firstName: 1 },
+              },
+              {
+                path: "vendor",
+                model: "vendor",
+                select: { firstName: 1 },
+              },
+            ],
+          },
+        ],
       },
     });
 
@@ -1030,6 +1132,7 @@ exports.getSubCategory2Data = async (req, res) => {
   }
 };
 
+//*******************************************getAllServicesForCategory*************************************************************************//
 exports.getAllServicesForCategories = async (req, res) => {
   try {
     let category = await Category.find(
@@ -1059,17 +1162,64 @@ exports.getAllServicesForCategories = async (req, res) => {
   }
 };
 
+//*******************************************getAllServicesForSubCategory*************************************************************************//
 exports.getAllServicesForSubCategories = async (req, res) => {
   try {
     let services = await SubCategory.find(
       { _id: req.params.id, subCategory2: { $size: 0 } },
       { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
-    ).populate("service", {
-      _id: 1,
-      name: 1,
-      description: 1,
-      rating: 1,
-      image: 1,
+    ).populate({
+      path: "service",
+      model: "service",
+      select: { __v: 0 },
+      populate: [
+        {
+          path: "silver",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "rating.ratedBy",
+              model: "user",
+              select: { firstName: 1 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { firstName: 1 },
+            },
+          ],
+        },
+        {
+          path: "gold",
+          populate: [
+            {
+              path: "rating.ratedBy",
+              model: "user",
+              select: { firstName: 1 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { firstName: 1 },
+            },
+          ],
+        },
+        {
+          path: "platinum",
+          populate: [
+            {
+              path: "rating.ratedBy",
+              model: "user",
+              select: { firstName: 1 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { firstName: 1 },
+            },
+          ],
+        },
+      ],
     });
 
     if (!services) {
@@ -1088,17 +1238,64 @@ exports.getAllServicesForSubCategories = async (req, res) => {
   }
 };
 
+//*******************************************getAllServicesForSubCategory2*************************************************************************//
 exports.getAllServicesForSubCategories2 = async (req, res) => {
   try {
     let services = await SubCategory2.find(
       { _id: req.params.id },
       { _id: 1, name: 1, createdAt: 1, updatedAt: 1 }
-    ).populate("service", {
-      _id: 1,
-      name: 1,
-      description: 1,
-      rating: 1,
-      image: 1,
+    ).populate({
+      path: "service",
+      model: "service",
+      select: { __v: 0 },
+      populate: [
+        {
+          path: "silver",
+          select: { __v: 0 },
+          populate: [
+            {
+              path: "rating.ratedBy",
+              model: "user",
+              select: { firstName: 1 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { firstName: 1 },
+            },
+          ],
+        },
+        {
+          path: "gold",
+          populate: [
+            {
+              path: "rating.ratedBy",
+              model: "user",
+              select: { firstName: 1 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { firstName: 1 },
+            },
+          ],
+        },
+        {
+          path: "platinum",
+          populate: [
+            {
+              path: "rating.ratedBy",
+              model: "user",
+              select: { firstName: 1 },
+            },
+            {
+              path: "vendor",
+              model: "vendor",
+              select: { firstName: 1 },
+            },
+          ],
+        },
+      ],
     });
 
     if (!services) {
@@ -1117,6 +1314,7 @@ exports.getAllServicesForSubCategories2 = async (req, res) => {
   }
 };
 
+//********************************************************************************************************************//
 exports.getCategoryForSubCategory = async (req, res) => {
   try {
     let category = await Category.find(
@@ -1139,6 +1337,7 @@ exports.getCategoryForSubCategory = async (req, res) => {
   }
 };
 
+//********************************************************************************************************************//
 exports.getCategoryForService = async (req, res) => {
   try {
     let category = await Category.find(
@@ -1161,6 +1360,7 @@ exports.getCategoryForService = async (req, res) => {
   }
 };
 
+//********************************************************************************************************************//
 exports.getSubCategoryForSubCategory2 = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1197,6 +1397,7 @@ exports.getSubCategoryForSubCategory2 = async (req, res) => {
   }
 };
 
+//********************************************************************************************************************//
 exports.getSubCategoryForService = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1233,6 +1434,7 @@ exports.getSubCategoryForService = async (req, res) => {
   }
 };
 
+//********************************************************************************************************************//
 exports.getSubCategory2ForService = async (req, res) => {
   try {
     const { id, sid } = req.params;
@@ -1284,6 +1486,7 @@ exports.getSubCategory2ForService = async (req, res) => {
   }
 };
 
+//***************************************deleteCategory*******************************************************************************//
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.body;
@@ -1330,6 +1533,7 @@ exports.deleteCategory = async (req, res) => {
   }
 };
 
+//***************************************deleteSubCategory****************************************************************************//
 exports.deleteSubCategory = async (req, res) => {
   try {
     const { id, categoryId } = req.body;
@@ -1390,6 +1594,7 @@ exports.deleteSubCategory = async (req, res) => {
   }
 };
 
+//***************************************deleteSubCategory2***************************************************************************//
 exports.deleteSubCategory2 = async (req, res) => {
   try {
     const { id, subCategoryId } = req.body;
@@ -1444,6 +1649,7 @@ exports.deleteSubCategory2 = async (req, res) => {
   }
 };
 
+//***************************************deleteServiceCategory************************************************************************//
 exports.deleteServiceForCategory = async (req, res) => {
   try {
     const { id, categoryId } = req.body;
@@ -1484,6 +1690,7 @@ exports.deleteServiceForCategory = async (req, res) => {
   }
 };
 
+//***************************************deleteServiceSubCategory*********************************************************************//
 exports.deleteServiceForSubCategory = async (req, res) => {
   try {
     const { id, subCategoryId } = req.body;
@@ -1524,6 +1731,7 @@ exports.deleteServiceForSubCategory = async (req, res) => {
   }
 };
 
+//***************************************deleteServiceSubCategory2********************************************************************//
 exports.deleteServiceForSubCategory2 = async (req, res) => {
   try {
     const { id, subCategory2Id } = req.body;
@@ -1564,6 +1772,7 @@ exports.deleteServiceForSubCategory2 = async (req, res) => {
   }
 };
 
+//***************************************deleteAllCat/SubCat/SubCat2/ServiceFromDataBase**********************************************//
 exports.allServices = async (req, res) => {
   try {
     let service = await Service.deleteMany();
@@ -1628,6 +1837,7 @@ exports.allCategories = async (req, res) => {
   }
 };
 
+//***************************************updateCategory/SubCategory/SubCategory2ById*************************************************//
 exports.updateCategory = async (req, res) => {
   try {
     const { body } = req;
@@ -1759,6 +1969,7 @@ exports.updateSubCategory2 = async (req, res) => {
   }
 };
 
+//***************************************updateService*******************************************************************************//
 exports.updateService = async (req, res) => {
   try {
     const { body } = req;
@@ -1831,174 +2042,7 @@ exports.updateService = async (req, res) => {
   }
 };
 
-//***************************************************************************************************************************** */
-
-// exports.updateServiceToSubCategory = async (req, res) => {
-//   try {
-//     const { body } = req;
-//     const { error } = Joi.object()
-//       .keys({
-//         name: Joi.string().required(),
-//         image: Joi.string(),
-//         description: Joi.string(),
-//         rating: Joi.number(),
-//         subCategoryId: Joi.string().required(),
-//       })
-//       .required()
-//       .validate(body);
-
-//     if (error) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: error.details[0].message });
-//     }
-//     let subCategory = await SubCategory.findById(body.subCategoryId);
-//     if (!subCategory) {
-//       return res
-//         .status(500)
-//         .send({ success: false, message: "Subcategory doesn't exist" });
-//     }
-//     if (subCategory.subCategory2.length !== 0) {
-//       return res.status(200).send({
-//         success: false,
-//         message:
-//           "Can not add service,subCategory2 already defined under subCategory",
-//       });
-//     }
-//     let service = await Service.findOne({ name: body.name });
-//     if (service) {
-//       return res.status(409).send({
-//         success: false,
-//         message: "Service Already Exists",
-//         subCategory,
-//         service,
-//       });
-//     }
-//     service = new Service({
-//       name: body.name,
-//       image: body.image,
-//       description: body.description,
-//       silver: {
-//         description: body.silver.description,
-//         price: body.silver.price,
-//         image: body.silver.image,
-//       },
-//       gold: {
-//         description: body.gold.description,
-//         price: body.gold.price,
-//         image: body.gold.image,
-//       },
-//       platinum: {
-//         description: body.platinum.description,
-//         price: body.platinum.price,
-//         image: body.silver.image,
-//       },
-//     });
-//     service = await service.save();
-//     if (!service) {
-//       return res
-//         .status(400)
-//         .send({ success: false, message: "Service creation failed" });
-//     }
-//     subCategory = await SubCategory.findByIdAndUpdate(
-//       body.subCategoryId,
-//       { $push: { service: service._id } },
-//       { new: true }
-//     );
-//     if (!subCategory) {
-//       return res.status(500).send({
-//         success: false,
-//         message: "SubCategory updation failed for adding service",
-//       });
-//     }
-//     return res.status(200).send({
-//       success: true,
-//       message: "Service added successfully to subCategory",
-//       service,
-//       subCategory,
-//     });
-//   } catch (e) {
-//     return res.status(500).send({ success: false, error: e.name });
-//   }
-// };
-
-// exports.updateServiceToSubCategory2 = async (req, res) => {
-//   try {
-//     const { body } = req;
-//     const { error } = Joi.object()
-//       .keys({
-//         name: Joi.string().required(),
-//         image: Joi.string(),
-//         description: Joi.string(),
-//         rating: Joi.number(),
-//         subCategory2Id: Joi.string().required(),
-//       })
-//       .required()
-//       .validate(body);
-
-//     if (error) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: error.details[0].message });
-//     }
-//     let service = await Service.findOne({ name: body.name });
-//     if (service) {
-//       return res.status(409).send({
-//         success: false,
-//         message: "Service Already Exists",
-//         service,
-//       });
-//     }
-//     service = new Service({
-//       name: body.name,
-//       image: body.image,
-//       description: body.description,
-//       silver: {
-//         description: body.silver.description,
-//         price: body.silver.price,
-//         image: body.silver.image,
-//       },
-//       gold: {
-//         description: body.gold.description,
-//         price: body.gold.price,
-//         image: body.gold.image,
-//       },
-//       platinum: {
-//         description: body.platinum.description,
-//         price: body.platinum.price,
-//         image: body.silver.image,
-//       },
-//     });
-//     service = await service.save();
-//     if (!service) {
-//       return res
-//         .status(400)
-//         .send({ success: false, message: "Service creation failed" });
-//     }
-//     let subCategory2 = await SubCategory2.findByIdAndUpdate(
-//       body.subCategory2Id,
-//       { $push: { service: service._id } },
-//       { new: true }
-//     );
-//     console.log(subCategory2.service);
-//     if (!subCategory2) {
-//       return res.status(500).send({
-//         success: false,
-//         message: "SubCategory2 updation failed for adding service",
-//       });
-//     }
-//     return res.status(200).send({
-//       success: true,
-//       message: "Service added successfully to subCategory2",
-//       service,
-//       subCategory2,
-//     });
-//   } catch (e) {
-//     return res.status(500).send({ success: false, error: e.name });
-//   }
-// };
-
-//***************************************service*******************************************************************//
+//***************************************updateServiceCategoriesWithVendor***********************************************************//
 exports.updateVendorSilver = async (req, res) => {
   try {
     const { body } = req;
@@ -2142,6 +2186,7 @@ exports.updateVendorPlatinum = async (req, res) => {
   }
 };
 
+//***************************************giveRatingAndUpdate*************************************************************************//
 exports.rateSilver = async (req, res) => {
   try {
     const { body } = req;
@@ -2473,6 +2518,7 @@ exports.updateRatePlatinum = async (req, res) => {
   }
 };
 
+//***************************************getAllServices*******************************************************************************//
 exports.getServices = async (req, res) => {
   try {
     const { body } = req;
@@ -2573,6 +2619,7 @@ exports.getServices = async (req, res) => {
   }
 };
 
+//***************************************getServiceById*****************************************************************************//
 exports.getService = async (req, res) => {
   try {
     const { body } = req;
