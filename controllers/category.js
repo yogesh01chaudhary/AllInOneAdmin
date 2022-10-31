@@ -783,7 +783,7 @@ exports.getAllCategories = async (req, res) => {
       success: true,
       message: "All Category SubCategory SubCategory2 fetched successfully",
       category,
-      count,
+      // count,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
