@@ -111,7 +111,9 @@ exports.addSubCategory = async (req, res) => {
         .json({ success: false, message: error.details[0].message });
     }
 
-    let category = await Category.findById(body.categoryId);
+    let category = await Category.findById(body.categoryId).populate(
+      "subCategory"
+    );
     if (!category) {
       return res
         .status(500)
@@ -123,16 +125,19 @@ exports.addSubCategory = async (req, res) => {
         message: "Can not add subCategory, service already defined",
       });
     }
-    let subCategory = await SubCategory.findOne({ name: body.name });
-    if (subCategory) {
-      return res.status(409).send({
-        success: false,
-        message: "subCategory Already Exists",
-        subCategory,
-        category,
-      });
+
+    let p = 0;
+    for (let i = 0; i < category.subCategory.length; i++) {
+      if (category.subCategory[i].name === body.name) {
+        p++;
+        break;
+      }
     }
-    subCategory = new SubCategory({
+    if (p) {
+      return res.status(409).json({ message: "SubCategory already exist" });
+    }
+
+    let subCategory = new SubCategory({
       name: body.name,
       image: body.image,
     });
@@ -190,7 +195,9 @@ exports.addSubCategory2 = async (req, res) => {
     }
     // console.log({ body });
 
-    let subCategory = await SubCategory.findById(body.subCategoryId);
+    let subCategory = await SubCategory.findById(body.subCategoryId).populate(
+      "subCategory2"
+    );
     // console.log({ subCategory });
     if (!subCategory) {
       return res
@@ -205,16 +212,18 @@ exports.addSubCategory2 = async (req, res) => {
       });
     }
 
-    let subCategory2 = await SubCategory2.findOne({ name: body.name });
-    if (subCategory2) {
-      return res.status(409).send({
-        success: false,
-        message: "subCategory2 Already Exists",
-        subCategory2,
-        subCategory,
-      });
+    let p = 0;
+    for (let i = 0; i < subCategory.subCategory2.length; i++) {
+      if (subCategory.subCategory2[i].name === body.name) {
+        p++;
+        break;
+      }
     }
-    subCategory2 = new SubCategory2({ name: body.name, image: body.image });
+    if (p) {
+      return res.status(409).json({ message: "SubCategory already exist" });
+    }
+
+    let subCategory2 = new SubCategory2({ name: body.name, image: body.image });
     subCategory2 = await subCategory2.save();
     if (!subCategory2) {
       return res.status(400).send({
@@ -574,8 +583,8 @@ exports.addServiceToSubCategory2 = async (req, res) => {
 //*******************************************getAllCategoriesWithPopulated*************************************************************************//
 exports.getAllCategories = async (req, res) => {
   try {
-    // const skip = req.query.skip || 0;
-    // const limit = req.query.limit || 6;
+    const skip = req.query.skip || 0;
+    const limit = req.query.limit || 6;
     let category = await Category.find({}, { __v: 0 })
       .populate({
         path: "subCategory",
@@ -760,9 +769,10 @@ exports.getAllCategories = async (req, res) => {
             ],
           },
         ],
-      });
-    // .skip(skip)
-    // .limit(limit);
+      })
+    .skip(skip)
+    .limit(limit);
+    // let count = category.length;
 
     if (!category) {
       return res
@@ -773,6 +783,7 @@ exports.getAllCategories = async (req, res) => {
       success: true,
       message: "All Category SubCategory SubCategory2 fetched successfully",
       category,
+      count,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.name });
@@ -1132,7 +1143,7 @@ exports.getSubCategory2Data = async (req, res) => {
   }
 };
 
-//*******************************************getAllServicesForCategory*************************************************************************//
+//*******************************************getAllServicesForCategoryById*************************************************************************//
 exports.getAllServicesForCategories = async (req, res) => {
   try {
     let category = await Category.find(
@@ -1162,7 +1173,7 @@ exports.getAllServicesForCategories = async (req, res) => {
   }
 };
 
-//*******************************************getAllServicesForSubCategory*************************************************************************//
+//*******************************************getAllServicesForSubCategoryById*************************************************************************//
 exports.getAllServicesForSubCategories = async (req, res) => {
   try {
     let services = await SubCategory.find(
@@ -1238,7 +1249,7 @@ exports.getAllServicesForSubCategories = async (req, res) => {
   }
 };
 
-//*******************************************getAllServicesForSubCategory2*************************************************************************//
+//*******************************************getAllServicesForSubCategory2ById*************************************************************************//
 exports.getAllServicesForSubCategories2 = async (req, res) => {
   try {
     let services = await SubCategory2.find(
@@ -1314,7 +1325,7 @@ exports.getAllServicesForSubCategories2 = async (req, res) => {
   }
 };
 
-//********************************************************************************************************************//
+//********************************************getCategory/SubCategory/SubCategory2 in dropdowns while adding data*********************************************//
 exports.getCategoryForSubCategory = async (req, res) => {
   try {
     let category = await Category.find(
@@ -1337,7 +1348,6 @@ exports.getCategoryForSubCategory = async (req, res) => {
   }
 };
 
-//********************************************************************************************************************//
 exports.getCategoryForService = async (req, res) => {
   try {
     let category = await Category.find(
@@ -1360,7 +1370,6 @@ exports.getCategoryForService = async (req, res) => {
   }
 };
 
-//********************************************************************************************************************//
 exports.getSubCategoryForSubCategory2 = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1397,7 +1406,6 @@ exports.getSubCategoryForSubCategory2 = async (req, res) => {
   }
 };
 
-//********************************************************************************************************************//
 exports.getSubCategoryForService = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1434,7 +1442,6 @@ exports.getSubCategoryForService = async (req, res) => {
   }
 };
 
-//********************************************************************************************************************//
 exports.getSubCategory2ForService = async (req, res) => {
   try {
     const { id, sid } = req.params;
@@ -1772,7 +1779,7 @@ exports.deleteServiceForSubCategory2 = async (req, res) => {
   }
 };
 
-//***************************************deleteAllCat/SubCat/SubCat2/ServiceFromDataBase**********************************************//
+//***************************************deleteAllServiceFromDataBase**************************************************************//
 exports.allServices = async (req, res) => {
   try {
     let service = await Service.deleteMany();
@@ -1789,6 +1796,7 @@ exports.allServices = async (req, res) => {
   }
 };
 
+//***************************************deleteAllSubCategories2FromDataBase**************************************************************//
 exports.allSubCategories2 = async (req, res) => {
   try {
     let subCategory2 = await SubCategory2.deleteMany();
@@ -1805,6 +1813,7 @@ exports.allSubCategories2 = async (req, res) => {
   }
 };
 
+//***************************************deleteAllSubCategoryFromDataBase**************************************************************//
 exports.allSubCategories = async (req, res) => {
   try {
     let subCategory = await SubCategory.deleteMany();
@@ -1821,6 +1830,7 @@ exports.allSubCategories = async (req, res) => {
   }
 };
 
+//***************************************deleteAllCategoriesFromDataBase**************************************************************//
 exports.allCategories = async (req, res) => {
   try {
     let category = await Category.deleteMany();
