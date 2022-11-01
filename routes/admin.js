@@ -19,6 +19,7 @@ const {
   getVendorsServiceRequest,
   grantServicesToVendorById,
   sendRequestToVendors,
+  getVendorsService,
 } = require("../controllers/admin");
 
 const { auth } = require("../middleware/auth");
@@ -40,6 +41,12 @@ router.get(
   auth,
   isAdmin,
   getVendorsServiceRequest
+);
+router.get(
+  "/vendorsService/:serviceId",
+  auth,
+  isAdmin,
+  getVendorsService
 );
 router.put("/grantServicesToVendor", auth, isAdmin, grantServicesToVendorById);
 

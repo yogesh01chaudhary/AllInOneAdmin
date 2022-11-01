@@ -6,6 +6,7 @@ const { Vendor } = require("../models/vendor");
 const { sendMail, createPassword } = require("../helpers/sendPassword");
 const Joi = require("joi");
 const { SubAdmin } = require("../models/subAdmin");
+const mongoose = require("mongoose");
 
 // exports.signUpAdmin = async (req, res) => {
 //   try {
@@ -142,7 +143,6 @@ exports.getVendors = async (req, res) => {
         $facet: {
           totalData: [
             { $match: {} },
-            { $unwind: { path: "$services" } },
             { $skip: skipValue },
             { $limit: limitValue },
           ],
@@ -150,20 +150,8 @@ exports.getVendors = async (req, res) => {
         },
       },
     ]);
-    let count = data[0].totalCount[0].count;
+    let count = data[0].totalCount[0];
     let vendors = data[0].totalData;
-
-    // vendors = await Vendor.find({})
-    //   .populate({ path: "services", model: "service", select: { __v: 0 } })
-    //   .limit(limitValue)
-
-    //   .skip(skipValue);
-
-    vendors = await Vendor.populate(vendors, {
-      path: "services",
-      model: "service",
-      select: { __v: 0 },
-    });
 
     if (!vendors) {
       return res
@@ -454,6 +442,90 @@ exports.grantServicesToVendorById = async (req, res) => {
   }
 };
 
+//@desc get Vendors According to Service
+//@route GET/api/v1/admin/vendorsService/:serviceId
+//@access Private
+exports.getVendorsService = async (req, res) => {
+  try {
+    console.log(req.params);
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    // let vendor = await Vendor.find(
+    //   { services: { $in: req.params.serviceId } },
+    //   { requestedService: 0, __v: 0 }
+    // );
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            {
+              $match: {
+                services: {
+                  $in: [mongoose.Types.ObjectId(req.params.serviceId)],
+                },
+              },
+            },
+            {
+              $project: {
+                bankDetails: 0,
+                verification: 0,
+                password: 0,
+                requestedService: 0,
+                location: 0,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+            {
+              $lookup: {
+                from: "services",
+                localField: "services",
+                foreignField: "_id",
+                as: "output",
+              },
+            },
+          ],
+
+          totalCount: [
+            {
+              $match: {
+                services: {
+                  $in: [mongoose.Types.ObjectId(req.params.serviceId)],
+                },
+              },
+            },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    // let vendor = data
+    let count = data[0].totalCount[0];
+    console.log(count);
+    let vendor = data[0].totalData;
+    if (!vendor) {
+      return res
+        .status(400)
+        .send({ success: false, message: "Something went wrong" });
+    }
+    if (vendor.length === 0) {
+      return res.status(400).send({
+        success: true,
+        message: "No Vendors Providing This Service",
+        vendor,
+        count,
+      });
+    }
+    return res.status(200).send({
+      succes: true,
+      message: "Vendors For Service Fetched Successfully",
+      vendor,
+      count,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.message });
+  }
+};
 //*******************************************subAdmin******************************************************************** */
 
 exports.addSubAdmin = async (req, res) => {
