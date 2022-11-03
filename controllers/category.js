@@ -130,7 +130,7 @@ exports.s3UrlCategory = async (req, res) => {
         Bucket: process.env.AWS_BUCKET_NAME,
         ContentType: "image/jpeg",
         Key: key,
-        Expires: 120,
+        // Expires: 120,
       });
       return res.status(200).send({
         success: true,
