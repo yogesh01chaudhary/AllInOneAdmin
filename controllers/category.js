@@ -128,9 +128,9 @@ exports.s3UrlCategory = async (req, res) => {
       const key = `${id}/${uuidv4()}.jpeg`;
       const url = await s3.getSignedUrlPromise("putObject", {
         Bucket: process.env.AWS_BUCKET_NAME,
-        ContentType: "image/jpeg",
+        // ContentType: "image/jpeg",
         Key: key,
-        // Expires: 120,
+        Expires: 120,
       });
       return res.status(200).send({
         success: true,
@@ -151,15 +151,13 @@ exports.s3UrlCategory = async (req, res) => {
       Key: key,
       Expires: 60,
     });
-    return res
-      .status(200)
-      .send({
-        success: true,
-        message: "Url generated",
-        url,
-        key,
-        name: result.name,
-      });
+    return res.status(200).send({
+      success: true,
+      message: "Url generated",
+      url,
+      key,
+      name: result.name,
+    });
   } catch (e) {
     res.status(500).send({ success: false, message: e.message });
   }
@@ -441,15 +439,13 @@ exports.s3UrlSubCategory = async (req, res) => {
       Key: key,
       Expires: 60,
     });
-    return res
-      .status(200)
-      .send({
-        success: true,
-        message: "Url generated",
-        url,
-        key,
-        name: result.name,
-      });
+    return res.status(200).send({
+      success: true,
+      message: "Url generated",
+      url,
+      key,
+      name: result.name,
+    });
   } catch (e) {
     res.status(500).send({ success: false, message: e.message });
   }
@@ -727,15 +723,13 @@ exports.s3UrlSubCategory2 = async (req, res) => {
       Key: key,
       Expires: 60,
     });
-    return res
-      .status(200)
-      .send({
-        success: true,
-        message: "Url generated",
-        url,
-        key,
-        name: result.name,
-      });
+    return res.status(200).send({
+      success: true,
+      message: "Url generated",
+      url,
+      key,
+      name: result.name,
+    });
   } catch (e) {
     res.status(500).send({ success: false, message: e.message });
   }
@@ -1263,15 +1257,13 @@ exports.s3UrlService = async (req, res) => {
       Key: key,
       Expires: 60,
     });
-    return res
-      .status(200)
-      .send({
-        success: true,
-        message: "Url generated",
-        url,
-        key,
-        name: result.name,
-      });
+    return res.status(200).send({
+      success: true,
+      message: "Url generated",
+      url,
+      key,
+      name: result.name,
+    });
   } catch (e) {
     res.status(500).send({ success: false, message: e.message });
   }
