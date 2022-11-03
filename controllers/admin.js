@@ -7,7 +7,10 @@ const { sendMail, createPassword } = require("../helpers/sendPassword");
 const Joi = require("joi");
 const { SubAdmin } = require("../models/subAdmin");
 const mongoose = require("mongoose");
+const AWS = require("aws-sdk");
+const { v4: uuidv4 } = require("uuid");
 
+//******************************************************admin************************************************************** */
 // exports.signUpAdmin = async (req, res) => {
 //   try {
 //     let { userId, password } = req.body;
@@ -87,6 +90,139 @@ exports.loginAdmin = async (req, res) => {
   }
 };
 
+//@desc get s3Url
+//@route GET api/v1/admin/s3Url1
+//@access Private
+exports.s3Url1 = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+
+    console.log(s3, process.env.AWS_BUCKET_NAME);
+    const { id } = req.user;
+    let admin = await Admin.findById(id);
+    if (!admin) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Admin Doesn't Exists" });
+    }
+    if (!admin.imageUrl) {
+      const key = `${id}/${uuidv4()}.jpeg`;
+      const url = await s3.getSignedUrlPromise("putObject", {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        ContentType: "image/jpeg",
+        Key: key,
+        Expires: 120,
+      });
+      return res.status(200).send({
+        success: true,
+        message: "Url generated , imageUrl doesn't exists in DB",
+        url,
+        key,
+      });
+    }
+
+    let fileName = admin.imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    const url = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      ContentType: "image/jpeg",
+      Key: key,
+      Expires: 60,
+    });
+    return res
+      .status(200)
+      .send({ success: true, message: "Url generated", url, key });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Upload imageUrl in DB using  S3
+//@route PUT api/v1/admin/imageUrl
+//@access Private
+exports.updateImageUrl = async (req, res) => {
+  try {
+    const { user, body } = req;
+    Joi.object()
+      .keys({
+        body: Joi.object().keys({
+          imageUrl: Joi.string().required(),
+        }),
+        user: Joi.object().keys({
+          id: Joi.string().required(),
+        }),
+      })
+      .required()
+      .validate(req);
+    let admin = await Admin.findByIdAndUpdate(
+      user.id,
+      { imageUrl: body.imageUrl },
+      { new: true }
+    );
+    if (!admin) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Vendor Doesn't Exists" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Updated", admin });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc delete image from s3 Bucket and DB
+//@route DELETE api/v1/admin/imageUrl
+//@access Private
+exports.deleteImageUrl = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+    let fileName = req.body.imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: key };
+    let admin = await Admin.findById(id);
+    if (!admin) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Admin Doesn't Exists" });
+    }
+    if (admin.imageUrl !== req.body.imageUrl) {
+      return res.status(400).send({
+        success: false,
+        message:
+          "Can't be deleted imageUrl doesn't match with Admin's imageUrl",
+      });
+    }
+    s3.deleteObject(params, async (err) => {
+      if (err)
+        return res.status(500).send({
+          success: false,
+          message: "Something went wrong",
+          error: err.message,
+        });
+      let admin = await Admin.findByIdAndUpdate(id, { imageUrl: "" });
+      return res
+        .status(200)
+        .send({ success: true, message: "Successfully Deleted", admin });
+    });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//******************************************************users************************************************************** */
 exports.getUsers = async (req, res) => {
   try {
     // const limitValue = req.query.limit || 2;
@@ -376,23 +512,55 @@ exports.getAccepted = async (req, res) => {
 
 exports.getVendorsServiceRequest = async (req, res) => {
   try {
-    let service = await Vendor.find({}, { requestedService: 1 });
-    if (!service) {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            {
+              $match: {},
+            },
+            {
+              $project: {
+                __v: 0,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+            {
+              $lookup: {
+                from: "services",
+                localField: "services",
+                foreignField: "_id",
+                as: "output",
+              },
+            },
+          ],
+
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendor = data[0].totalData;
+    if (!vendor) {
       return res
         .status(400)
         .send({ success: false, message: "Something went wrong" });
     }
-    if (service.length === 0) {
+    if (vendor.length === 0) {
       return res.status(400).send({
         success: true,
         message: "No Vendors Requested For Service",
-        service,
+        vendor,
       });
     }
     return res.status(200).send({
       succes: true,
       message: "Service Request Fetched Successfully",
-      service,
+      vendor,
+      count,
     });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.message });
@@ -447,13 +615,8 @@ exports.grantServicesToVendorById = async (req, res) => {
 //@access Private
 exports.getVendorsService = async (req, res) => {
   try {
-    console.log(req.params);
     const limitValue = +req.query.limit || 6;
     const skipValue = +req.query.skip || 0;
-    // let vendor = await Vendor.find(
-    //   { services: { $in: req.params.serviceId } },
-    //   { requestedService: 0, __v: 0 }
-    // );
     const data = await Vendor.aggregate([
       {
         $facet: {
@@ -499,9 +662,7 @@ exports.getVendorsService = async (req, res) => {
         },
       },
     ]);
-    // let vendor = data
     let count = data[0].totalCount[0];
-    console.log(count);
     let vendor = data[0].totalData;
     if (!vendor) {
       return res

@@ -9,6 +9,9 @@ const adminSchema = new Schema({
     type: String,
     required: true,
   },
+  imageUrl: {
+    type: String,
+  },
 });
 
 exports.Admin = model("admin", adminSchema);

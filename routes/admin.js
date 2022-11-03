@@ -20,13 +20,22 @@ const {
   grantServicesToVendorById,
   sendRequestToVendors,
   getVendorsService,
+  updateImageUrl,
+  s3Url1,
+  deleteImageUrl,
 } = require("../controllers/admin");
 
 const { auth } = require("../middleware/auth");
 const { isAdmin, isSubAdmin } = require("../middleware/isAdmin");
 
+//*************************************admin************************************************************************************* */
 // router.post("/signUpAdmin", signUpAdmin);
 router.post("/loginAdmin", loginAdmin);
+router.get("/s3Url1", auth, isAdmin, s3Url1);
+router.put("/imageUrl", auth, isAdmin, updateImageUrl);
+router.delete("/imageUrl", auth, isAdmin, deleteImageUrl);
+
+//*************************************users************************************************************************************* */
 router.get("/getUsers", auth, isAdmin, getUsers);
 
 //*************************************vendors************************************************************************************* */
@@ -42,12 +51,7 @@ router.get(
   isAdmin,
   getVendorsServiceRequest
 );
-router.get(
-  "/vendorsService/:serviceId",
-  auth,
-  isAdmin,
-  getVendorsService
-);
+router.get("/vendorsService/:serviceId", auth, isAdmin, getVendorsService);
 router.put("/grantServicesToVendor", auth, isAdmin, grantServicesToVendorById);
 
 //***************************************subAdmin******************************************************************************** */
@@ -58,6 +62,6 @@ router.put("/subAdmin", auth, isAdmin, updateSubAdmin);
 router.delete("/subAdmin", auth, isAdmin, deleteSubAdmin);
 router.delete("/subAdminAll", auth, isAdmin, deleteAllSubAdmin);
 
-router.post("/sendRequestToVendors",sendRequestToVendors)
+router.post("/sendRequestToVendors", sendRequestToVendors);
 
 module.exports = router;

@@ -4,6 +4,9 @@ const { Category } = require("../models/category");
 const { SubCategory } = require("../models/sub-category");
 const { SubCategory2 } = require("../models/sub-category2");
 const { Service } = require("../models/services");
+// const s3 = require("../helpers/s3UrlFetch");
+const AWS = require("aws-sdk");
+const { v4: uuidv4 } = require("uuid");
 
 //*******************************************test*************************************************************************//
 exports.createTest = async (req, res) => {
@@ -42,7 +45,10 @@ exports.findTest = async (req, res) => {
   }
 };
 
-//*******************************************add*************************************************************************//
+//*******************************************CATEGORY*************************************************************************//
+//@desc add Category
+//@route POST api/v1/admin/addCategory
+//@access Private
 exports.addCategory = async (req, res) => {
   try {
     const { body } = req;
@@ -72,7 +78,7 @@ exports.addCategory = async (req, res) => {
     }
     category = new Category({
       name: body.name,
-      image: body.image,
+      imageUrl: body.imageUrl,
     });
 
     category = await category.save();
@@ -91,6 +97,212 @@ exports.addCategory = async (req, res) => {
   }
 };
 
+//@desc get s3Url to upload category image
+//@route GET api/v1/admin/s3Url/category
+//@access Private
+exports.s3UrlCategory = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+    console.log(process.env.AWS_ID, process.env.AWS_SECRET);
+    const { id } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Category.findById(id);
+    if (!result) {
+      res
+        .status(404)
+        .send({ success: false, message: "Category Doesn't Exists" });
+    }
+    if (!result.imageUrl) {
+      const key = `${id}/${uuidv4()}.jpeg`;
+      const url = await s3.getSignedUrlPromise("putObject", {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        ContentType: "image/jpeg",
+        Key: key,
+        Expires: 120,
+      });
+      return res.status(200).send({
+        success: true,
+        message: "Url generated , imageUrl doesn't exists in DB",
+        url,
+        key,
+        name: result.name,
+      });
+    }
+
+    let fileName = result.imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    const url = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      ContentType: "image/jpeg",
+      Key: key,
+      Expires: 60,
+    });
+    return res
+      .status(200)
+      .send({
+        success: true,
+        message: "Url generated",
+        url,
+        key,
+        name: result.name,
+      });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Upload imageUrl for category in DB using  S3
+//@route PUT api/v1/admin/imageUrl/category
+//@access Private
+exports.updateImageUrlCategory = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Category.findByIdAndUpdate(
+      body.id,
+      { imageUrl: body.imageUrl },
+      { new: true }
+    );
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Category Doesn't Exists" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Updated", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Get imageUrl for category from DB to diplay the image
+//@route GET api/v1/admin/imageUrl/category
+//@access Private
+exports.imageUrlCategory = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Category.findById({ _id: body.id }, { imageUrl: 1 });
+
+    if (!result) {
+      return res.status(404).send({
+        success: false,
+        message: "Category or ImageUrl Doesn't Exists",
+      });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Fetched", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc delete image from s3 Bucket and DB
+//@route DELETE api/v1/admin/imageUrl/category
+//@access Private
+exports.deleteImageUrlCategory = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+
+    const { id, imageUrl } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Category.findById(id);
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Category Doesn't Exists" });
+    }
+    console.log(result.imageUrl, imageUrl);
+    if (result.imageUrl !== imageUrl) {
+      return res.status(400).send({
+        success: false,
+        message:
+          "Can't be deleted imageUrl doesn't match with Category's imageUrl",
+      });
+    }
+
+    let fileName = imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: key };
+    s3.deleteObject(params, async (err) => {
+      if (err)
+        return res.status(500).send({
+          success: false,
+          message: "Something went wrong",
+          error: err.message,
+        });
+      let result = await Category.findByIdAndUpdate(
+        id,
+        { imageUrl: "" },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .send({ success: true, message: "Successfully Deleted", result });
+    });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+// ***********************************************subCategory*******************************************************************//
+//@desc add subCategory
+//@route POST api/v1/admin/addSubCategory
+//@access Private
 exports.addSubCategory = async (req, res) => {
   try {
     const { body } = req;
@@ -174,6 +386,213 @@ exports.addSubCategory = async (req, res) => {
   }
 };
 
+//@desc get s3Url to upload SubCategory image
+//@route GET api/v1/admin/s3Url/subCategory
+//@access Private
+exports.s3UrlSubCategory = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+    console.log(process.env.AWS_ID, process.env.AWS_SECRET);
+    const { id } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory.findById(id);
+    if (!result) {
+      res
+        .status(404)
+        .send({ success: false, message: "Category Doesn't Exists" });
+    }
+    // console.log(s3,process.env.AWS_BUCKET_NAME,result)
+    if (!result.imageUrl) {
+      const key = `${id}/${uuidv4()}.jpeg`;
+      const url = await s3.getSignedUrlPromise("putObject", {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        ContentType: "image/jpeg",
+        Key: key,
+        Expires: 120,
+      });
+      return res.status(200).send({
+        success: true,
+        message: "Url generated , imageUrl doesn't exists in DB",
+        url,
+        key,
+        name: result.name,
+      });
+    }
+
+    let fileName = result.imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    const url = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      ContentType: "image/jpeg",
+      Key: key,
+      Expires: 60,
+    });
+    return res
+      .status(200)
+      .send({
+        success: true,
+        message: "Url generated",
+        url,
+        key,
+        name: result.name,
+      });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Upload imageUrl for subCategory in DB
+//@route PUT api/v1/admin/imageUrl/subCategory
+//@access Private
+exports.updateImageUrlSubCategory = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory.findByIdAndUpdate(
+      body.id,
+      { imageUrl: body.imageUrl },
+      { new: true }
+    );
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "SubCategory Doesn't Exists" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Updated", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Get imageUrl for SubCategory from DB to diplay the image
+//@route GET api/v1/admin/imageUrl/subCategory
+//@access Private
+exports.imageUrlSubCategory = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory.findById({ _id: body.id }, { imageUrl: 1 });
+
+    if (!result) {
+      return res.status(404).send({
+        success: false,
+        message: "SubCategory or ImageUrl Doesn't Exists",
+      });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Fetched", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc delete image from s3 Bucket and subCategory
+//@route DELETE api/v1/admin/imageUrl/subCategory
+//@access Private
+exports.deleteImageUrlSubCategory = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+
+    const { id, imageUrl } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory.findById(id);
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "SubCategory Doesn't Exists" });
+    }
+    console.log(result.imageUrl, imageUrl);
+    if (result.imageUrl !== imageUrl) {
+      return res.status(400).send({
+        success: false,
+        message:
+          "Can't be deleted imageUrl doesn't match with SubCategory's imageUrl",
+      });
+    }
+
+    let fileName = imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: key };
+    s3.deleteObject(params, async (err) => {
+      if (err)
+        return res.status(500).send({
+          success: false,
+          message: "Something went wrong",
+          error: err.message,
+        });
+      let result = await SubCategory.findByIdAndUpdate(
+        id,
+        { imageUrl: "" },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .send({ success: true, message: "Successfully Deleted", result });
+    });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+// ***********************************************subCategory2*******************************************************************//
+//@desc add subCategory2
+//@route POST api/v1/admin/addSubCategory2
+//@access Private
 exports.addSubCategory2 = async (req, res) => {
   try {
     const { body } = req;
@@ -193,12 +612,10 @@ exports.addSubCategory2 = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    // console.log({ body });
 
     let subCategory = await SubCategory.findById(body.subCategoryId).populate(
       "subCategory2"
     );
-    // console.log({ subCategory });
     if (!subCategory) {
       return res
         .status(500)
@@ -255,6 +672,213 @@ exports.addSubCategory2 = async (req, res) => {
   }
 };
 
+//@desc get s3Url to upload category image
+//@route GET api/v1/admin/s3Url/subCategory
+//@access Private
+exports.s3UrlSubCategory2 = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+    console.log(process.env.AWS_ID, process.env.AWS_SECRET);
+    const { id } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory2.findById(id);
+    if (!result) {
+      res
+        .status(404)
+        .send({ success: false, message: "SubCategory2 Doesn't Exists" });
+    }
+    // console.log(s3,process.env.AWS_BUCKET_NAME,result)
+    if (!result.imageUrl) {
+      const key = `${id}/${uuidv4()}.jpeg`;
+      const url = await s3.getSignedUrlPromise("putObject", {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        ContentType: "image/jpeg",
+        Key: key,
+        Expires: 120,
+      });
+      return res.status(200).send({
+        success: true,
+        message: "Url generated , imageUrl doesn't exists in DB",
+        url,
+        key,
+        name: result.name,
+      });
+    }
+
+    let fileName = result.imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    const url = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      ContentType: "image/jpeg",
+      Key: key,
+      Expires: 60,
+    });
+    return res
+      .status(200)
+      .send({
+        success: true,
+        message: "Url generated",
+        url,
+        key,
+        name: result.name,
+      });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Upload imageUrl for subCategory2 in DB
+//@route PUT api/v1/admin/imageUrl/subCategory2
+//@access Private
+exports.updateImageUrlSubCategory2 = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory2.findByIdAndUpdate(
+      body.id,
+      { imageUrl: body.imageUrl },
+      { new: true }
+    );
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "SubCategory2 Doesn't Exists" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Updated", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Get imageUrl for subCategory2 from DB to diplay the image
+//@route GET api/v1/admin/imageUrl/subCategory2
+//@access Private
+exports.imageUrlSubCategory2 = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory2.findById({ _id: body.id }, { imageUrl: 1 });
+
+    if (!result) {
+      return res.status(404).send({
+        success: false,
+        message: "SubCategory2 or ImageUrl Doesn't Exists",
+      });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Fetched", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc delete image from s3 Bucket and SubCategory collection
+//@route DELETE api/v1/admin/imageUrl/subCategory2
+//@access Private
+exports.deleteImageUrlSubCategory2 = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+
+    const { id, imageUrl } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await SubCategory2.findById(id);
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "SubCategory2 Doesn't Exists" });
+    }
+    console.log(result.imageUrl, imageUrl);
+    if (result.imageUrl !== imageUrl) {
+      return res.status(400).send({
+        success: false,
+        message:
+          "Can't be deleted imageUrl doesn't match with SubCategory2's imageUrl",
+      });
+    }
+
+    let fileName = imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: key };
+    s3.deleteObject(params, async (err) => {
+      if (err)
+        return res.status(500).send({
+          success: false,
+          message: "Something went wrong",
+          error: err.message,
+        });
+      let result = await SubCategory2.findByIdAndUpdate(
+        id,
+        { imageUrl: "" },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .send({ success: true, message: "Successfully Deleted", result });
+    });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+// ***********************************************service*******************************************************************//
+//@desc add service to category
+//@route POST api/v1/admin/addServiceCategory
+//@access Private
 exports.addServiceToCategory = async (req, res) => {
   try {
     const { body } = req;
@@ -362,7 +986,9 @@ exports.addServiceToCategory = async (req, res) => {
     return res.status(500).send({ success: false, error: e.name });
   }
 };
-
+//@desc add servcie to subcategory
+//@route POST api/v1/admin/addServiceSubCategory
+//@access Private
 exports.addServiceToSubCategory = async (req, res) => {
   try {
     const { body } = req;
@@ -474,6 +1100,9 @@ exports.addServiceToSubCategory = async (req, res) => {
   }
 };
 
+//@desc add servcie to subCategory2
+//@route POST api/v1/admin/addServcieToSuBCategory2
+//@access Private
 exports.addServiceToSubCategory2 = async (req, res) => {
   try {
     const { body } = req;
@@ -580,6 +1209,208 @@ exports.addServiceToSubCategory2 = async (req, res) => {
   }
 };
 
+//@desc get s3Url to upload category image
+//@route GET api/v1/admin/s3Url/category
+//@access Private
+exports.s3UrlService = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+    console.log(process.env.AWS_ID, process.env.AWS_SECRET);
+    const { id } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Service.findById(id);
+    if (!result) {
+      res
+        .status(404)
+        .send({ success: false, message: "Service Doesn't Exists" });
+    }
+    if (!result.imageUrl) {
+      const key = `${id}/${uuidv4()}.jpeg`;
+      const url = await s3.getSignedUrlPromise("putObject", {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        ContentType: "image/jpeg",
+        Key: key,
+        Expires: 120,
+      });
+      return res.status(200).send({
+        success: true,
+        message: "Url generated , imageUrl doesn't exists in DB",
+        url,
+        key,
+        name: result.name,
+      });
+    }
+
+    let fileName = result.imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    const url = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      ContentType: "image/jpeg",
+      Key: key,
+      Expires: 60,
+    });
+    return res
+      .status(200)
+      .send({
+        success: true,
+        message: "Url generated",
+        url,
+        key,
+        name: result.name,
+      });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Upload imageUrl for service in DB using  S3
+//@route PUT api/v1/admin/imageUrl/service
+//@access Private
+exports.updateImageUrlService = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Service.findByIdAndUpdate(
+      body.id,
+      { imageUrl: body.imageUrl },
+      { new: true }
+    );
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Service Doesn't Exists" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Updated", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc Get imageUrl for service from DB to diplay the image
+//@route GET api/v1/admin/imageUrl/service
+//@access Private
+exports.imageUrlService = async (req, res) => {
+  try {
+    const { body } = req;
+    const { error } = Joi.object()
+      .keys({
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Service.findById({ _id: body.id }, { imageUrl: 1 });
+
+    if (!result) {
+      return res.status(404).send({
+        success: false,
+        message: "Service or ImageUrl Doesn't Exists",
+      });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Image Url Fetched", result });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//@desc delete image from s3 Bucket and service collection
+//@route DELETE api/v1/admin/imageUrl/service
+//@access Private
+exports.deleteImageUrlService = async (req, res) => {
+  try {
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.AWS_ID,
+      secretAccessKey: process.env.AWS_SECRET,
+    });
+
+    const { id, imageUrl } = req.body;
+    const { error } = Joi.object()
+      .keys({
+        imageUrl: Joi.string().required(),
+        id: Joi.string().required(),
+      })
+      .required()
+      .validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let result = await Service.findById(id);
+    if (!result) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Service Doesn't Exists" });
+    }
+    if (result.imageUrl !== imageUrl) {
+      return res.status(400).send({
+        success: false,
+        message:
+          "Can't be deleted imageUrl doesn't match with Service's imageUrl",
+      });
+    }
+
+    let fileName = imageUrl.split("/");
+    fileName =
+      fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+    const key = `${fileName}`;
+    var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: key };
+    s3.deleteObject(params, async (err) => {
+      if (err)
+        return res.status(500).send({
+          success: false,
+          message: "Something went wrong",
+          error: err.message,
+        });
+      let result = await Service.findByIdAndUpdate(
+        id,
+        { imageUrl: "" },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .send({ success: true, message: "Successfully Deleted", result });
+    });
+  } catch (e) {
+    res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+//***********************************************GETALL*************************************************************************//
 //*******************************************getAllCategoriesWithPopulated*************************************************************************//
 exports.getAllCategories = async (req, res) => {
   try {
@@ -770,8 +1601,8 @@ exports.getAllCategories = async (req, res) => {
           },
         ],
       })
-    .skip(skip)
-    .limit(limit);
+      .skip(skip)
+      .limit(limit);
     // let count = category.length;
 
     if (!category) {
@@ -1325,6 +2156,206 @@ exports.getAllServicesForSubCategories2 = async (req, res) => {
   }
 };
 
+//*******************************************getAllServices*******************************************************************************//
+exports.getServices = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        name: Joi.string(),
+        image: Joi.string(),
+        description: Joi.string(),
+        silver: Joi.object().keys({
+          description: Joi.string(),
+          vendor: Joi.array().items(Joi.string()),
+          rating: Joi.array().items(
+            Joi.object().keys({
+              ratedBy: Joi.string().required(),
+              star: Joi.number(),
+            })
+          ),
+        }),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.find({}, { __v: 0 }).populate([
+      {
+        path: "silver",
+        select: { __v: 0 },
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "gold",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "platinum",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+    ]);
+
+    if (!service) {
+      return res
+        .status(500)
+        .send({ success: flase, message: "Something went wrong" });
+    }
+
+    if (service.length == 0) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Servcie Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Service Fetched Successfully",
+      service,
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .send({ success: false, message: "Something went wrong", error: e.name });
+  }
+};
+
+//********************************************getServiceById*****************************************************************************//
+exports.getService = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        serviceId: Joi.string().required(),
+        name: Joi.string(),
+        image: Joi.string(),
+        description: Joi.string(),
+        silver: Joi.object().keys({
+          description: Joi.string(),
+          vendor: Joi.array().items(Joi.string()),
+          rating: Joi.array().items(
+            Joi.object().keys({
+              ratedBy: Joi.string().required(),
+              star: Joi.number(),
+            })
+          ),
+        }),
+      })
+      .required()
+      .validate(body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+    let service = await Service.findById(
+      { _id: body.serviceId },
+      { __v: 0 }
+    ).populate([
+      {
+        path: "silver",
+        select: { __v: 0 },
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "gold",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+      {
+        path: "platinum",
+        populate: [
+          {
+            path: "rating.ratedBy",
+            model: "user",
+            select: { firstName: 1 },
+          },
+          {
+            path: "vendor",
+            model: "vendor",
+            select: { firstName: 1 },
+          },
+        ],
+      },
+    ]);
+    if (!service) {
+      return res
+        .status(404)
+        .send({ success: true, message: "No Servcie Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Service Fetched Successfully",
+      service,
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .send({ success: false, message: "Something went wrong", error: e.name });
+  }
+};
+
+//******************************************************DROPDOWN POPULATE DURING POST************************************************//
 //********************************************getCategory/SubCategory/SubCategory2 in dropdowns while adding data*********************************************//
 exports.getCategoryForSubCategory = async (req, res) => {
   try {
@@ -1493,6 +2524,7 @@ exports.getSubCategory2ForService = async (req, res) => {
   }
 };
 
+//***************************************DELETEBYID***********************************************************************************//
 //***************************************deleteCategory*******************************************************************************//
 exports.deleteCategory = async (req, res) => {
   try {
@@ -1779,6 +2811,7 @@ exports.deleteServiceForSubCategory2 = async (req, res) => {
   }
 };
 
+//***********************************************DELETEALL*************************************************************************//
 //***************************************deleteAllServiceFromDataBase**************************************************************//
 exports.allServices = async (req, res) => {
   try {
@@ -1847,6 +2880,7 @@ exports.allCategories = async (req, res) => {
   }
 };
 
+//***********************************************UPDATE*************************************************************************//
 //***************************************updateCategory/SubCategory/SubCategory2ById*************************************************//
 exports.updateCategory = async (req, res) => {
   try {
@@ -2196,6 +3230,7 @@ exports.updateVendorPlatinum = async (req, res) => {
   }
 };
 
+//***********************************************FOR-USERS*************************************************************************//
 //***************************************giveRatingAndUpdate*************************************************************************//
 exports.rateSilver = async (req, res) => {
   try {
@@ -2525,204 +3560,5 @@ exports.updateRatePlatinum = async (req, res) => {
       message: "Something went wrong",
       error: e.message,
     });
-  }
-};
-
-//***************************************getAllServices*******************************************************************************//
-exports.getServices = async (req, res) => {
-  try {
-    const { body } = req;
-    console.log(body);
-    const { error } = Joi.object()
-      .keys({
-        name: Joi.string(),
-        image: Joi.string(),
-        description: Joi.string(),
-        silver: Joi.object().keys({
-          description: Joi.string(),
-          vendor: Joi.array().items(Joi.string()),
-          rating: Joi.array().items(
-            Joi.object().keys({
-              ratedBy: Joi.string().required(),
-              star: Joi.number(),
-            })
-          ),
-        }),
-      })
-      .required()
-      .validate(body);
-
-    if (error) {
-      return res
-        .status(400)
-        .json({ success: false, message: error.details[0].message });
-    }
-    let service = await Service.find({}, { __v: 0 }).populate([
-      {
-        path: "silver",
-        select: { __v: 0 },
-        populate: [
-          {
-            path: "rating.ratedBy",
-            model: "user",
-            select: { firstName: 1 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { firstName: 1 },
-          },
-        ],
-      },
-      {
-        path: "gold",
-        populate: [
-          {
-            path: "rating.ratedBy",
-            model: "user",
-            select: { firstName: 1 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { firstName: 1 },
-          },
-        ],
-      },
-      {
-        path: "platinum",
-        populate: [
-          {
-            path: "rating.ratedBy",
-            model: "user",
-            select: { firstName: 1 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { firstName: 1 },
-          },
-        ],
-      },
-    ]);
-
-    if (!service) {
-      return res
-        .status(500)
-        .send({ success: flase, message: "Something went wrong" });
-    }
-
-    if (service.length == 0) {
-      return res
-        .status(404)
-        .send({ success: true, message: "No Servcie Found" });
-    }
-    return res.status(200).send({
-      success: true,
-      message: "Service Fetched Successfully",
-      service,
-    });
-  } catch (e) {
-    return res
-      .status(500)
-      .send({ success: false, message: "Something went wrong", error: e.name });
-  }
-};
-
-//***************************************getServiceById*****************************************************************************//
-exports.getService = async (req, res) => {
-  try {
-    const { body } = req;
-    console.log(body);
-    const { error } = Joi.object()
-      .keys({
-        serviceId: Joi.string().required(),
-        name: Joi.string(),
-        image: Joi.string(),
-        description: Joi.string(),
-        silver: Joi.object().keys({
-          description: Joi.string(),
-          vendor: Joi.array().items(Joi.string()),
-          rating: Joi.array().items(
-            Joi.object().keys({
-              ratedBy: Joi.string().required(),
-              star: Joi.number(),
-            })
-          ),
-        }),
-      })
-      .required()
-      .validate(body);
-
-    if (error) {
-      return res
-        .status(400)
-        .json({ success: false, message: error.details[0].message });
-    }
-    let service = await Service.findById(
-      { _id: body.serviceId },
-      { __v: 0 }
-    ).populate([
-      {
-        path: "silver",
-        select: { __v: 0 },
-        populate: [
-          {
-            path: "rating.ratedBy",
-            model: "user",
-            select: { firstName: 1 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { firstName: 1 },
-          },
-        ],
-      },
-      {
-        path: "gold",
-        populate: [
-          {
-            path: "rating.ratedBy",
-            model: "user",
-            select: { firstName: 1 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { firstName: 1 },
-          },
-        ],
-      },
-      {
-        path: "platinum",
-        populate: [
-          {
-            path: "rating.ratedBy",
-            model: "user",
-            select: { firstName: 1 },
-          },
-          {
-            path: "vendor",
-            model: "vendor",
-            select: { firstName: 1 },
-          },
-        ],
-      },
-    ]);
-    if (!service) {
-      return res
-        .status(404)
-        .send({ success: true, message: "No Servcie Found" });
-    }
-    return res.status(200).send({
-      success: true,
-      message: "Service Fetched Successfully",
-      service,
-    });
-  } catch (e) {
-    return res
-      .status(500)
-      .send({ success: false, message: "Something went wrong", error: e.name });
   }
 };

@@ -1,7 +1,5 @@
 const express = require("express");
 const {
-  loginSubAdmin,
-  responsibilitiesAllowed,
   getUsers,
   getVendors,
   acceptRequest,
@@ -9,6 +7,10 @@ const {
   getRejected,
   getAccepted,
   getPending,
+} = require("../controllers/admin");
+const {
+  loginSubAdmin,
+  responsibilitiesAllowed,
 } = require("../controllers/subAdmin");
 
 const { auth } = require("../middleware/auth");

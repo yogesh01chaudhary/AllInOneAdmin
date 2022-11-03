@@ -51,17 +51,54 @@ const {
   updateService,
   getSubCategoryData,
   getSubCategory2Data,
+  s3UrlCategory,
+  updateImageUrlCategory,
+  imageUrlCategory,
+  deleteImageUrlCategory,
+  s3UrlSubCategory,
+  updateImageUrlSubCategory,
+  imageUrlSubCategory,
+  deleteImageUrlSubCategory,
+  s3UrlSubCategory2,
+  updateImageUrlSubCategory2,
+  imageUrlSubCategory2,
+  deleteImageUrlSubCategory2,
+  s3UrlService,
+  updateImageUrlService,
+  imageUrlService,
+  deleteImageUrlService,
 } = require("../controllers/category");
 
 const { auth } = require("../middleware/auth");
 const { isAdmin } = require("../middleware/isAdmin");
 const router = express.Router();
 
+// ********************************************test******************************************************************************//
 router.post("/createTest", auth, isAdmin, createTest);
 router.post("/findtest", auth, isAdmin, findTest);
+
+// ********************************************category******************************************************************************//
 router.post("/addCategory", auth, isAdmin, addCategory);
+router.get("/s3Url/category",auth,isAdmin,s3UrlCategory)
+router.put("/imageUrl/category",auth,isAdmin,updateImageUrlCategory)
+router.get("/imageUrl/category",auth,isAdmin,imageUrlCategory)
+router.delete("/imageUrl/category",auth,isAdmin,deleteImageUrlCategory)
+
+// ********************************************subCategory******************************************************************************//
 router.post("/addSubCategory", auth, isAdmin, addSubCategory);
+router.get("/s3Url/subCategory",auth,isAdmin,s3UrlSubCategory)
+router.put("/imageUrl/subCategory",auth,isAdmin,updateImageUrlSubCategory)
+router.get("/imageUrl/subCategory",auth,isAdmin,imageUrlSubCategory)
+router.delete("/imageUrl/subCategory",auth,isAdmin,deleteImageUrlSubCategory)
+
+// ********************************************subCategory2******************************************************************************//
 router.post("/addSubCategory2", auth, isAdmin, addSubCategory2);
+router.get("/s3Url/subCategory2",auth,isAdmin,s3UrlSubCategory2)
+router.put("/imageUrl/subCategory2",auth,isAdmin,updateImageUrlSubCategory2)
+router.get("/imageUrl/subCategory2",auth,isAdmin,imageUrlSubCategory2)
+router.delete("/imageUrl/subCategory2",auth,isAdmin,deleteImageUrlSubCategory2)
+
+// ********************************************service******************************************************************************//
 router.post("/addServiceToCategory", auth, isAdmin, addServiceToCategory);
 router.post("/addServiceToSubCategory", auth, isAdmin, addServiceToSubCategory);
 router.post(
@@ -70,6 +107,12 @@ router.post(
   isAdmin,
   addServiceToSubCategory2
 );
+router.get("/s3Url/service",auth,isAdmin,s3UrlService)
+router.put("/imageUrl/service",auth,isAdmin,updateImageUrlService)
+router.get("/imageUrl/service",auth,isAdmin,imageUrlService)
+router.delete("/imageUrl/service",auth,isAdmin,deleteImageUrlService)
+
+// ********************************************GET_ALL_SERVICES_BY_ID******************************************************************************//
 router.get(
   "/getAllServicesForCategories/:id",
   auth,
@@ -88,12 +131,19 @@ router.get(
   isAdmin,
   getAllServicesForSubCategories2
 );
+
+// ********************************************GET_ALL******************************************************************************//
 router.get("/getAllCategories", auth, isAdmin, getAllCategories);
 router.get("/getAllSubCategories/", auth, isAdmin, getAllSubCategories);
 router.get("/getAllSubCategories2/", auth, isAdmin, getAllSubCategories2);
+router.get("/services", auth, isAdmin, getServices);
+
+// ********************************************GET_BY_ID******************************************************************************//
 router.get("/getSubCategoryData/:id", auth, isAdmin, getSubCategoryData);
 router.get("/getSubCategory2Data/:id", auth, isAdmin, getSubCategory2Data);
+router.get("/service", auth, isAdmin, getService);
 
+// ********************************************GET_DATA_FOR_DROPDOWNS******************************************************************************//
 router.get(
   "/getCategoryForSubCategory",
   auth,
@@ -119,6 +169,8 @@ router.get(
   isAdmin,
   getSubCategory2ForService
 );
+
+// ********************************************DELETE_BY_ID******************************************************************************//
 router.delete("/category", auth, isAdmin, deleteCategory);
 router.delete("/subCategory", auth, isAdmin, deleteSubCategory);
 router.delete("/subCategory2", auth, isAdmin, deleteSubCategory2);
@@ -135,10 +187,14 @@ router.delete(
   isAdmin,
   deleteServiceForSubCategory2
 );
+
+// ********************************************DELETE_ALL******************************************************************************//
 router.delete("/allServices", auth, isAdmin, allServices);
 router.delete("/allSubCategories2", auth, isAdmin, allSubCategories2);
 router.delete("/allSubCategories", auth, isAdmin, allSubCategories);
 router.delete("/allCategories", auth, isAdmin, allCategories);
+
+// ********************************************UPDATE******************************************************************************//
 router.put("/category", auth, isAdmin, updateCategory);
 router.put("/subCategory", auth, isAdmin, updateSubCategory);
 router.put("/subCategory2", auth, isAdmin, updateSubCategory2);
@@ -148,8 +204,6 @@ router.put("/service", auth, isAdmin, updateService);
 router.put("/silver", auth, isAdmin, updateVendorSilver);
 router.put("/gold", auth, isAdmin, updateVendorGold);
 router.put("/platinum", auth, isAdmin, updateVendorPlatinum);
-router.get("/services", auth, isAdmin, getServices);
-router.get("/service", auth, isAdmin, getService);
 
 //user rate service
 router.post("/rateSilver", rateSilver);
