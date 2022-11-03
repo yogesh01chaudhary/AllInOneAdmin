@@ -79,21 +79,21 @@ router.post("/findtest", auth, isAdmin, findTest);
 
 // ********************************************category******************************************************************************//
 router.post("/addCategory", auth, isAdmin, addCategory);
-router.get("/s3Url/category",auth,isAdmin,s3UrlCategory)
+router.get("/s3Url/category/:id",auth,isAdmin,s3UrlCategory)
 router.put("/imageUrl/category",auth,isAdmin,updateImageUrlCategory)
 router.get("/imageUrl/category",auth,isAdmin,imageUrlCategory)
 router.delete("/imageUrl/category",auth,isAdmin,deleteImageUrlCategory)
 
 // ********************************************subCategory******************************************************************************//
 router.post("/addSubCategory", auth, isAdmin, addSubCategory);
-router.get("/s3Url/subCategory",auth,isAdmin,s3UrlSubCategory)
+router.get("/s3Url/subCategory/:id",auth,isAdmin,s3UrlSubCategory)
 router.put("/imageUrl/subCategory",auth,isAdmin,updateImageUrlSubCategory)
 router.get("/imageUrl/subCategory",auth,isAdmin,imageUrlSubCategory)
 router.delete("/imageUrl/subCategory",auth,isAdmin,deleteImageUrlSubCategory)
 
 // ********************************************subCategory2******************************************************************************//
 router.post("/addSubCategory2", auth, isAdmin, addSubCategory2);
-router.get("/s3Url/subCategory2",auth,isAdmin,s3UrlSubCategory2)
+router.get("/s3Url/subCategory2/:id",auth,isAdmin,s3UrlSubCategory2)
 router.put("/imageUrl/subCategory2",auth,isAdmin,updateImageUrlSubCategory2)
 router.get("/imageUrl/subCategory2",auth,isAdmin,imageUrlSubCategory2)
 router.delete("/imageUrl/subCategory2",auth,isAdmin,deleteImageUrlSubCategory2)
@@ -107,7 +107,7 @@ router.post(
   isAdmin,
   addServiceToSubCategory2
 );
-router.get("/s3Url/service",auth,isAdmin,s3UrlService)
+router.get("/s3Url/service/:id",auth,isAdmin,s3UrlService)
 router.put("/imageUrl/service",auth,isAdmin,updateImageUrlService)
 router.get("/imageUrl/service",auth,isAdmin,imageUrlService)
 router.delete("/imageUrl/service",auth,isAdmin,deleteImageUrlService)

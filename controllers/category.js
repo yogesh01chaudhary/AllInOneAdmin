@@ -106,14 +106,13 @@ exports.s3UrlCategory = async (req, res) => {
       accessKeyId: process.env.AWS_ID,
       secretAccessKey: process.env.AWS_SECRET,
     });
-    console.log(process.env.AWS_ID, process.env.AWS_SECRET);
-    const { id } = req.body;
+    const { id } = req.params;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(req.body);
+      .validate(req.params);
     if (error) {
       return res
         .status(400)
@@ -396,13 +395,13 @@ exports.s3UrlSubCategory = async (req, res) => {
       secretAccessKey: process.env.AWS_SECRET,
     });
     console.log(process.env.AWS_ID, process.env.AWS_SECRET);
-    const { id } = req.body;
+    const { id } = req.params;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(req.body);
+      .validate(req.params);
     if (error) {
       return res
         .status(400)
@@ -682,13 +681,13 @@ exports.s3UrlSubCategory2 = async (req, res) => {
       secretAccessKey: process.env.AWS_SECRET,
     });
     console.log(process.env.AWS_ID, process.env.AWS_SECRET);
-    const { id } = req.body;
+    const { id } = req.params;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(req.body);
+      .validate(req.params);
     if (error) {
       return res
         .status(400)
@@ -1219,13 +1218,13 @@ exports.s3UrlService = async (req, res) => {
       secretAccessKey: process.env.AWS_SECRET,
     });
     console.log(process.env.AWS_ID, process.env.AWS_SECRET);
-    const { id } = req.body;
+    const { id } = req.params;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(req.body);
+      .validate(req.params);
     if (error) {
       return res
         .status(400)
