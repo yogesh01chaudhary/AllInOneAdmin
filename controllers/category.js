@@ -204,19 +204,19 @@ exports.updateImageUrlCategory = async (req, res) => {
 //@access Private
 exports.imageUrlCategory = async (req, res) => {
   try {
-    const { body } = req;
+    const { params } = req;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(body);
+      .validate(params);
     if (error) {
       return res
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let result = await Category.findById({ _id: body.id }, { imageUrl: 1 });
+    let result = await Category.findById({ _id: params.id }, { imageUrl: 1 });
 
     if (!result) {
       return res.status(404).send({
