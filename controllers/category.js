@@ -125,12 +125,12 @@ exports.s3UrlCategory = async (req, res) => {
         .send({ success: false, message: "Category Doesn't Exists" });
     }
     if (!result.imageUrl) {
-      const key = `${id}/${uuidv4()}.jpeg`;
+      const key = `${id}/${uuidv4()}.jpg`;
       const url = await s3.getSignedUrlPromise("putObject", {
         Bucket: process.env.AWS_BUCKET_NAME,
-        // ContentType: "image/jpeg",
         Key: key,
         Expires: 120,
+        ContentType: "image/jpeg",
       });
       return res.status(200).send({
         success: true,
