@@ -120,7 +120,7 @@ exports.s3UrlCategory = async (req, res) => {
     }
     let result = await Category.findById(id);
     if (!result) {
-      res
+      return res
         .status(404)
         .send({ success: false, message: "Category Doesn't Exists" });
     }
@@ -159,7 +159,7 @@ exports.s3UrlCategory = async (req, res) => {
       name: result.name,
     });
   } catch (e) {
-    res.status(500).send({ success: false, message: e.message });
+   return res.status(500).send({ success: false, message: e.message });
   }
 };
 
