@@ -5,8 +5,8 @@ const SubCategorySchema = new Schema(
     name: {
       type: String,
     },
-    image: {
-      type: Buffer,
+    imageUrl: {
+      type: String,
     },
     subCategory2: [
       {

@@ -6,8 +6,8 @@ const ServiceSchema = new Schema(
     name: {
       type: String,
     },
-    image: {
-      type: Buffer,
+    imageUrl: {
+      type: String,
     },
     description: {
       type: String,

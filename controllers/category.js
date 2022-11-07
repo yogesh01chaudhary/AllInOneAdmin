@@ -129,7 +129,7 @@ exports.s3UrlCategory = async (req, res) => {
       const url = await s3.getSignedUrlPromise("putObject", {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: key,
-        Expires: 120,
+        Expires: 60,
         ContentType: "image/jpeg",
       });
       return res.status(200).send({
@@ -159,7 +159,7 @@ exports.s3UrlCategory = async (req, res) => {
       name: result.name,
     });
   } catch (e) {
-   return res.status(500).send({ success: false, message: e.message });
+    return res.status(500).send({ success: false, message: e.message });
   }
 };
 
@@ -261,7 +261,11 @@ exports.deleteImageUrlCategory = async (req, res) => {
         .status(404)
         .send({ success: false, message: "Category Doesn't Exists" });
     }
-    console.log(result.imageUrl, imageUrl);
+    if (!result.imageUrl) {
+      return res
+        .status(400)
+        .send({ success: false, message: "imageUrl doesn't exists" });
+    }
     if (result.imageUrl !== imageUrl) {
       return res.status(400).send({
         success: false,
@@ -343,7 +347,12 @@ exports.addSubCategory = async (req, res) => {
       }
     }
     if (p) {
-      return res.status(409).json({ message: "SubCategory already exist" });
+      return res
+        .status(409)
+        .json({
+          message: "SubCategory already exist",
+          SubCategory: category.subCategory,
+        });
     }
 
     let subCategory = new SubCategory({
@@ -492,19 +501,22 @@ exports.updateImageUrlSubCategory = async (req, res) => {
 //@access Private
 exports.imageUrlSubCategory = async (req, res) => {
   try {
-    const { body } = req;
+    const { params } = req;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(body);
+      .validate(params);
     if (error) {
       return res
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let result = await SubCategory.findById({ _id: body.id }, { imageUrl: 1 });
+    let result = await SubCategory.findById(
+      { _id: params.id },
+      { imageUrl: 1 }
+    );
 
     if (!result) {
       return res.status(404).send({
@@ -549,7 +561,11 @@ exports.deleteImageUrlSubCategory = async (req, res) => {
         .status(404)
         .send({ success: false, message: "SubCategory Doesn't Exists" });
     }
-    console.log(result.imageUrl, imageUrl);
+    if (!result.imageUrl) {
+      return res
+        .status(400)
+        .send({ success: false, message: "imageUrl doesn't exists" });
+    }
     if (result.imageUrl !== imageUrl) {
       return res.status(400).send({
         success: false,
@@ -632,7 +648,7 @@ exports.addSubCategory2 = async (req, res) => {
       }
     }
     if (p) {
-      return res.status(409).json({ message: "SubCategory already exist" });
+      return res.status(409).json({ message: "SubCategory2 already exists",SubCategory2:subCategory.subCategory2 });
     }
 
     let subCategory2 = new SubCategory2({ name: body.name, image: body.image });
@@ -776,19 +792,22 @@ exports.updateImageUrlSubCategory2 = async (req, res) => {
 //@access Private
 exports.imageUrlSubCategory2 = async (req, res) => {
   try {
-    const { body } = req;
+    const { params } = req;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(body);
+      .validate(params);
     if (error) {
       return res
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let result = await SubCategory2.findById({ _id: body.id }, { imageUrl: 1 });
+    let result = await SubCategory2.findById(
+      { _id: params.id },
+      { imageUrl: 1 }
+    );
 
     if (!result) {
       return res.status(404).send({
@@ -833,7 +852,11 @@ exports.deleteImageUrlSubCategory2 = async (req, res) => {
         .status(404)
         .send({ success: false, message: "SubCategory2 Doesn't Exists" });
     }
-    console.log(result.imageUrl, imageUrl);
+    if (!result.imageUrl) {
+      return res
+        .status(400)
+        .send({ success: false, message: "imageUrl doesn't exists" });
+    }
     if (result.imageUrl !== imageUrl) {
       return res.status(400).send({
         success: false,
@@ -1150,7 +1173,7 @@ exports.addServiceToSubCategory2 = async (req, res) => {
     }
 
     if (p) {
-      return res.status(409).json({ message: "Service already exist" });
+      return res.status(409).json({ message: "Service already exist",service:subCategory2.service });
     }
 
     let service = new Service({
@@ -1310,19 +1333,19 @@ exports.updateImageUrlService = async (req, res) => {
 //@access Private
 exports.imageUrlService = async (req, res) => {
   try {
-    const { body } = req;
+    const { params } = req;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
       })
       .required()
-      .validate(body);
+      .validate(params);
     if (error) {
       return res
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-    let result = await Service.findById({ _id: body.id }, { imageUrl: 1 });
+    let result = await Service.findById({ _id: params.id }, { imageUrl: 1 });
 
     if (!result) {
       return res.status(404).send({
@@ -1366,6 +1389,11 @@ exports.deleteImageUrlService = async (req, res) => {
       return res
         .status(404)
         .send({ success: false, message: "Service Doesn't Exists" });
+    }
+    if (!result.imageUrl) {
+      return res
+        .status(400)
+        .send({ success: false, message: "imageUrl doesn't exists" });
     }
     if (result.imageUrl !== imageUrl) {
       return res.status(400).send({
@@ -2539,18 +2567,71 @@ exports.deleteCategory = async (req, res) => {
         .send({ success: false, message: "Category doesn't exist" });
     }
     if (category.subCategory.length === 0 && category.service.length === 0) {
-      let category = await Category.findByIdAndDelete(id);
-      if (!category) {
-        return res.status(404).send({
-          success: false,
-          message: "Category doesn't exist in condition",
-        });
-      }
-      return res.status(200).send({
-        success: true,
-        message: "Category Deleted Successfully",
-        data: category,
+      const s3 = new AWS.S3({
+        accessKeyId: process.env.AWS_ID,
+        secretAccessKey: process.env.AWS_SECRET,
       });
+
+      // const { id, imageUrl } = req.body;
+      // const { error } = Joi.object()
+      //   .keys({
+      //     imageUrl: Joi.string().required(),
+      //     id: Joi.string().required(),
+      //   })
+      //   .required()
+      //   .validate(req.body);
+      // if (error) {
+      //   return res
+      //     .status(400)
+      //     .json({ success: false, message: error.details[0].message });
+      // }
+      // let result = await Category.findById(id);
+      // if (!result) {
+      //   return res
+      //     .status(404)
+      //     .send({ success: false, message: "Category Doesn't Exists" });
+      // }
+      // console.log(result.imageUrl, imageUrl);
+      // if (result.imageUrl !== imageUrl) {
+      //   return res.status(400).send({
+      //     success: false,
+      //     message:
+      //       "Can't be deleted imageUrl doesn't match with Category's imageUrl",
+      //   });
+      // }
+
+      let fileName = category.imageUrl.split("/");
+      fileName =
+        fileName[fileName.length - 2] + "/" + fileName[fileName.length - 1];
+      const key = `${fileName}`;
+      var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: key };
+      s3.deleteObject(params, async (err) => {
+        if (err)
+          return res.status(500).send({
+            success: false,
+            message: "Something went wrong",
+            error: err.message,
+          });
+        category = await Category.findByIdAndDelete(id);
+        return res.status(200).send({
+          success: true,
+          message: "Category Deleted Succesfully With Image From S3",
+          data: category,
+        });
+      });
+
+      // let category = await Category.findByIdAndDelete(id);
+      // if (!category) {
+      //   return res.status(404).send({
+      //     success: false,
+      //     message: "Category doesn't exist in condition",
+      //   });
+      // }
+      // return res.status(200).send({
+      //   success: true,
+      //   message: "Category Deleted Successfully",
+      //   data: category,
+      // });
     }
     return res.status(200).send({
       success: true,

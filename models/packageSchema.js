@@ -5,10 +5,7 @@ const PackageSchema = new Schema({
     type: Number,
     required: true,
   },
-  image: {
-    type: String,
-  },
-  vendor: [
+    vendor: [
     {
       type: Schema.Types.ObjectId,
       ref: "vendor",

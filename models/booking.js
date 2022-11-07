@@ -5,10 +5,6 @@ const BookingSchema = new Schema(
     date: {
       type: String,
     },
-    servicePrice: {
-      type: Schema.Types.ObjectId,
-      ref: "servicePrice",
-    },
     timeSlot: {
       start: {
         type: String,
@@ -22,6 +18,19 @@ const BookingSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "user",
       required: true,
+    },
+    vendor: {
+      type: Schema.Types.ObjectId,
+      ref: "vendor",
+      required: true,
+    },
+    service: {
+      type: Schema.Types.ObjectId,
+      ref: "service",
+      required: true,
+    },
+    OTP: {
+      type: String,
     },
   },
   { timestamps: true }
