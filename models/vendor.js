@@ -34,22 +34,55 @@ const VendorSchema = new Schema(
     password: {
       type: String,
     },
-    address: {
-      type: String,
+    currentAddress: {
+      address: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      pin: {
+        type: Number,
+      },
     },
-    city: {
-      type: String,
-    },
-    pin: {
-      type: Number,
+    permanentAddress: {
+      address: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      pin: {
+        type: Number,
+      },
     },
     requestStatus: {
       type: String,
       default: "pending",
     },
-    profilePhoto: [{
+    transferStatus: {
       type: String,
-    }],
+      default: "unblock",
+    },
+    timeSlot: [
+      {
+        start: String,
+        end: String,
+        booked: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
+    imageUrl: {
+      type: String,
+    },
     verification: {
       aadharFront: {
         type: String,
@@ -62,6 +95,9 @@ const VendorSchema = new Schema(
         type: String,
       },
       selfie2: {
+        type: String,
+      },
+      pancard: {
         type: String,
       },
     },
@@ -100,26 +136,25 @@ const VendorSchema = new Schema(
       },
       coordinates: {
         type: [Number],
-        index: "2dsphere",
       },
-      formattedAddress: {
-        type: String,
-      },
+    },
+    locCoordinates: {
+      type: Array,
     },
   },
   { timestamps: true }
 );
 
-VendorSchema.pre("save", async function (next) {
-  const loc = await geocoder.geocode(this.address);
-  this.location = {
-    type: "Point",
-    coordinates: [loc[0].longitude, loc[0].latitude],
-    formattedAddress: loc[0].formattedAddress,
-  };
-  next();
-});
+// VendorSchema.pre("save", async function (next) {
+//   const loc = await geocoder.geocode(this.address);
+//   this.location = {
+//     type: "Point",
+//     coordinates: [loc[0].longitude, loc[0].latitude],
+//     formattedAddress: loc[0].formattedAddress,
+//   };
+//   next();
+// });
 
-// VendorSchema.index({ location: "2dsphere" });
+VendorSchema.index({ location: "2dsphere" });
 
 exports.Vendor = model("vendor", VendorSchema);

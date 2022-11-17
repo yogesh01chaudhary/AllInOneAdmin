@@ -9,6 +9,7 @@ const { SubAdmin } = require("../models/subAdmin");
 const mongoose = require("mongoose");
 const AWS = require("aws-sdk");
 const { v4: uuidv4 } = require("uuid");
+const axios = require("axios");
 
 //******************************************************admin************************************************************** */
 // exports.signUpAdmin = async (req, res) => {
@@ -231,6 +232,7 @@ exports.getUsers = async (req, res) => {
     // console.log(users);
     const limitValue = +req.query.limit || 6;
     const skipValue = +req.query.skip || 0;
+    
     const data = await User.aggregate([
       {
         $facet: {
@@ -279,6 +281,7 @@ exports.getVendors = async (req, res) => {
         $facet: {
           totalData: [
             { $match: {} },
+            { $project: { password: 0 } },
             { $skip: skipValue },
             { $limit: limitValue },
           ],
@@ -510,10 +513,14 @@ exports.getAccepted = async (req, res) => {
   }
 };
 
-exports.getVendorsServiceRequest = async (req, res) => {
+//@desc get Vendors Who Have Requested For Service
+//@route GET /api/v1/admin/vendorsRequestedService
+//@access Private
+exports.getVendorsRequestedService = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
     const skipValue = +req.query.skip || 0;
+
     const data = await Vendor.aggregate([
       {
         $facet: {
@@ -523,7 +530,10 @@ exports.getVendorsServiceRequest = async (req, res) => {
             },
             {
               $project: {
-                __v: 0,
+                requestedService: 1,
+                firstName: 1,
+                lastName: 1,
+                services: 1,
               },
             },
             { $skip: skipValue },
@@ -554,11 +564,12 @@ exports.getVendorsServiceRequest = async (req, res) => {
         success: true,
         message: "No Vendors Requested For Service",
         vendor,
+        count,
       });
     }
     return res.status(200).send({
       succes: true,
-      message: "Service Request Fetched Successfully",
+      message: "Vendors Requested For Service Fetched Successfully",
       vendor,
       count,
     });
@@ -567,12 +578,70 @@ exports.getVendorsServiceRequest = async (req, res) => {
   }
 };
 
-exports.grantServicesToVendorById = async (req, res) => {
+//@desc grant services to vendors who has requested for services
+//@route PUT /api/v1/admin/grantServicesToVendor/:id
+//@access Private
+exports.grantServicesToVendor = async (req, res) => {
   try {
-    const { body } = req;
+    const { body, params } = req;
     const { error } = Joi.object()
       .keys({
         id: Joi.string().required(),
+      })
+      .required()
+      .validate(params);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+    }
+
+    let vendor = await Vendor.findById(
+      { _id: req.params.id },
+      { requestedService: 1 }
+    );
+    if (!vendor) {
+      return res
+        .status(400)
+        .send({ success: false, message: "No Vendor Found" });
+    }
+
+    vendor = await Vendor.updateOne(
+      { _id: vendor._id },
+      {
+        $addToSet: { services: { $each: vendor.requestedService } },
+        requestedService: [],
+      },
+      { new: true }
+    );
+
+    return res.status(200).send({
+      succes: true,
+      message: "Services Provided Successfully",
+      vendor,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.message });
+  }
+};
+
+//@desc get Vendors Providing That Service
+//@route GET/api/v1/admin/vendorsForUser
+//@access Private
+exports.getVendorsForUser = async (req, res) => {
+  try {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const { body } = req;
+    let arr = [];
+    for (serviceId of body.services) {
+      arr.push(mongoose.Types.ObjectId(serviceId));
+    }
+    console.log(arr);
+    const { error } = Joi.object()
+      .keys({
+        services: Joi.array().items(Joi.string().required()),
       })
       .required()
       .validate(body);
@@ -582,50 +651,24 @@ exports.grantServicesToVendorById = async (req, res) => {
         .status(400)
         .json({ success: false, message: error.details[0].message });
     }
-
-    let service = await Vendor.findById(
-      { _id: req.body.id },
-      { requestedService: 1 }
-    );
-    if (!service) {
-      return res
-        .status(400)
-        .send({ success: false, message: "No Vendor Found" });
-    }
-
-    let vendor = await Vendor.updateOne(
-      { _id: service._id },
-      { $addToSet: { services: { $each: service.requestedService } } },
-      { new: true }
-    );
-
-    return res.status(200).send({
-      succes: true,
-      message: "Service Request Provided Successfully",
-      service,
-      vendor,
-    });
-  } catch (e) {
-    return res.status(500).send({ success: false, error: e.message });
-  }
-};
-
-//@desc get Vendors According to Service
-//@route GET/api/v1/admin/vendorsService/:serviceId
-//@access Private
-exports.getVendorsService = async (req, res) => {
-  try {
-    const limitValue = +req.query.limit || 6;
-    const skipValue = +req.query.skip || 0;
     const data = await Vendor.aggregate([
       {
         $facet: {
           totalData: [
             {
               $match: {
-                services: {
-                  $in: [mongoose.Types.ObjectId(req.params.serviceId)],
+                location: {
+                  $geoWithin: {
+                    $centerSphere: [
+                      [-73.93414657, 40.82302903],
+                      50000000 / 3963.2,
+                    ],
+                  },
                 },
+                services: {
+                  $all: arr,
+                },
+                transferStatus: "unblock",
               },
             },
             {
@@ -652,9 +695,18 @@ exports.getVendorsService = async (req, res) => {
           totalCount: [
             {
               $match: {
-                services: {
-                  $in: [mongoose.Types.ObjectId(req.params.serviceId)],
+                location: {
+                  $geoWithin: {
+                    $centerSphere: [
+                      [-73.93414657, 40.82302903],
+                      5000000 / 3963.2,
+                    ],
+                  },
                 },
+                services: {
+                  $all: arr,
+                },
+                transferStatus: "unblock",
               },
             },
             { $count: "count" },
@@ -662,7 +714,7 @@ exports.getVendorsService = async (req, res) => {
         },
       },
     ]);
-    let count = data[0].totalCount[0];
+    let count = data[0].totalCount;
     let vendor = data[0].totalData;
     if (!vendor) {
       return res
@@ -683,6 +735,34 @@ exports.getVendorsService = async (req, res) => {
       vendor,
       count,
     });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.message });
+  }
+};
+
+exports.sendNotification = async (req, res) => {
+  const { body } = req;
+  let deviceToken = body.deviceToken;
+  let registration_ids = [deviceToken];
+  let notification = {
+    text: body.text,
+    title: body.title,
+  };
+  let serverKey = `key=AAAAejUYQ9g:APA91bFxMDmzSGGZlJxOOYL8RlqRR3l06HmDMcycUPH5lsIi0yqUXLWNQPmKLAkQELGpWuu0pwT1wAwhpTTVJMq-xtJHzd7Vg_zNUx9WVB7XIqas043HZ5mhPFN_eQ-FF-Qbvly2Z27f`;
+  let api = "https://fcm.googleapis.com/fcm/send";
+  try {
+    await axios.post(
+      api,
+      { registration_ids, notification },
+      {
+        headers: {
+          Authorization: serverKey,
+        },
+      }
+    );
+    return res
+      .status(200)
+      .send({ success: true, message: "Notification sent successfully" });
   } catch (e) {
     return res.status(500).send({ success: false, error: e.message });
   }

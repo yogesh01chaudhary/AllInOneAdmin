@@ -23,6 +23,10 @@ const {
   updateImageUrl,
   s3Url1,
   deleteImageUrl,
+  getVendorsRequestedService,
+  grantServicesToVendor,
+  getVendorsForUser,
+  sendNotification,
 } = require("../controllers/admin");
 
 const { auth } = require("../middleware/auth");
@@ -46,13 +50,14 @@ router.get("/getRejected", auth, isAdmin, getRejected);
 router.get("/getAccepted", auth, isAdmin, getAccepted);
 router.get("/getPending", auth, isAdmin, getPending);
 router.get(
-  "/getVendorsServiceRequest",
+  "/vendorsRequestedService",
   auth,
   isAdmin,
-  getVendorsServiceRequest
+  getVendorsRequestedService
 );
-router.get("/vendorsService/:serviceId", auth, isAdmin, getVendorsService);
-router.put("/grantServicesToVendor", auth, isAdmin, grantServicesToVendorById);
+router.put("/grantServicesToVendor/:id", auth, isAdmin, grantServicesToVendor);
+router.get("/vendorsForUser/", auth, isAdmin, getVendorsForUser);
+router.get("/sendNotification/", auth, isAdmin, sendNotification);
 
 //***************************************subAdmin******************************************************************************** */
 router.post("/subAdmin", auth, isAdmin, addSubAdmin);
