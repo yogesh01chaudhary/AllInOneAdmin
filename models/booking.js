@@ -1,39 +1,68 @@
+const User = require("./user");
 const { Schema, model } = require("mongoose");
+const BookingSchema = new Schema({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: User,
+    required: true,
+  },
+  service: {
+    type: Schema.Types.ObjectId,
+    ref: 'service',
+  },
 
-const BookingSchema = new Schema(
-  {
-    date: {
-      type: String,
-    },
-    timeSlot: {
-      start: {
-        type: String,
-      },
-      end: {
-        type: String,
-      },
-    },
-    status: { type: String, default: "Pending" },
-    bookedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "user",
-      required: true,
-    },
-    vendor: {
-      type: Schema.Types.ObjectId,
-      ref: "vendor",
-      required: true,
-    },
-    service: {
+  item: {
+    packageId: {
       type: Schema.Types.ObjectId,
       ref: "service",
       required: true,
     },
-    OTP: {
+    description: {
+      type: String,
+    },
+    rating: {
+      type: Number,
+      default: 5,
+    },
+    price: {
+      type: Number,
+    },
+  },
+  total: {
+    type: Number,
+  },
+  vendor: {
+    type: Schema.Types.ObjectId,
+    ref: "Vendor",
+  },
+  timeSlot: {
+    start: {
+      type: String,
+    },
+    end: {
       type: String,
     },
   },
-  { timestamps: true }
-);
-
-exports.Booking = model("booking", BookingSchema);
+  bookingStatus: {
+    type: String,
+    enum: ["Confirmed", "Pending", "Cancelled", "Completed"],
+    default: "Pending",
+  },
+  payby: {
+    type: String,
+    enum: ["online", "cash"],
+  },
+  paid: {
+    type: Boolean,
+    default: false,
+  },
+  transactionId: {
+    type: String,
+  },
+  paymentStatus: {
+    type: String,
+    enum: ["Failed", "Successful", "Pending"],
+    default: "Pending",
+  },
+});
+module.exports = model("booking", BookingSchema);

@@ -16,17 +16,11 @@ const {
   updateSubAdmin,
   deleteSubAdmin,
   deleteAllSubAdmin,
-  getVendorsServiceRequest,
-  grantServicesToVendorById,
-  sendRequestToVendors,
-  getVendorsService,
   updateImageUrl,
   s3Url1,
   deleteImageUrl,
   getVendorsRequestedService,
   grantServicesToVendor,
-  getVendorsForUser,
-  sendNotification,
 } = require("../controllers/admin");
 
 const { auth } = require("../middleware/auth");
@@ -56,8 +50,6 @@ router.get(
   getVendorsRequestedService
 );
 router.put("/grantServicesToVendor/:id", auth, isAdmin, grantServicesToVendor);
-router.get("/vendorsForUser/", auth, isAdmin, getVendorsForUser);
-router.get("/sendNotification/", auth, isAdmin, sendNotification);
 
 //***************************************subAdmin******************************************************************************** */
 router.post("/subAdmin", auth, isAdmin, addSubAdmin);
@@ -67,6 +59,5 @@ router.put("/subAdmin", auth, isAdmin, updateSubAdmin);
 router.delete("/subAdmin", auth, isAdmin, deleteSubAdmin);
 router.delete("/subAdminAll", auth, isAdmin, deleteAllSubAdmin);
 
-router.post("/sendRequestToVendors", sendRequestToVendors);
 
 module.exports = router;

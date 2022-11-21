@@ -205,12 +205,6 @@ router.put("/silver", auth, isAdmin, updateVendorSilver);
 router.put("/gold", auth, isAdmin, updateVendorGold);
 router.put("/platinum", auth, isAdmin, updateVendorPlatinum);
 
-//user rate service
-router.post("/rateSilver", rateSilver);
-router.post("/rateGold", rateGold);
-router.post("/ratePlatinum", ratePlatinum);
-router.put("/rateSilver", updateRateSilver);
-router.put("/rateGold", updateRateGold);
-router.put("/ratePlatinum", updateRatePlatinum);
+
 
 module.exports = router;
