@@ -4,12 +4,6 @@ const router = express.Router();
 const {
   loginAdmin,
   getUsers,
-  getVendors,
-  rejectRequest,
-  acceptRequest,
-  getRejected,
-  getAccepted,
-  getPending,
   addSubAdmin,
   getAllSubAdmin,
   getSubAdmin,
@@ -19,8 +13,6 @@ const {
   updateImageUrl,
   s3Url1,
   deleteImageUrl,
-  getVendorsRequestedService,
-  grantServicesToVendor,
 } = require("../controllers/admin");
 
 const { auth } = require("../middleware/auth");
@@ -35,21 +27,6 @@ router.delete("/imageUrl", auth, isAdmin, deleteImageUrl);
 
 //*************************************users************************************************************************************* */
 router.get("/getUsers", auth, isAdmin, getUsers);
-
-//*************************************vendors************************************************************************************* */
-router.get("/getVendors", auth, isAdmin, getVendors);
-router.put("/acceptRequest", auth, isAdmin, acceptRequest);
-router.put("/rejectRequest", auth, isAdmin, rejectRequest);
-router.get("/getRejected", auth, isAdmin, getRejected);
-router.get("/getAccepted", auth, isAdmin, getAccepted);
-router.get("/getPending", auth, isAdmin, getPending);
-router.get(
-  "/vendorsRequestedService",
-  auth,
-  isAdmin,
-  getVendorsRequestedService
-);
-router.put("/grantServicesToVendor/:id", auth, isAdmin, grantServicesToVendor);
 
 //***************************************subAdmin******************************************************************************** */
 router.post("/subAdmin", auth, isAdmin, addSubAdmin);

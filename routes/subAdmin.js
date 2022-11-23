@@ -1,13 +1,5 @@
 const express = require("express");
-const {
-  getUsers,
-  getVendors,
-  acceptRequest,
-  rejectRequest,
-  getRejected,
-  getAccepted,
-  getPending,
-} = require("../controllers/admin");
+const { getVendors, acceptRequest, rejectRequest, getRejected, getAccepted, getPending } = require("../controllers/vendor");
 const {
   loginSubAdmin,
   responsibilitiesAllowed,
@@ -15,6 +7,7 @@ const {
 
 const { auth } = require("../middleware/auth");
 const { isSubAdmin } = require("../middleware/isAdmin");
+const { getUsers } = require("../controllers/admin");
 
 const router = express.Router();
 
