@@ -434,10 +434,11 @@ exports.nearbyVendors = async (req, res) => {
           ],
         },
         distanceField: "distance",
+        key: "location.coordinates",
         query: {
           $and: [
-            { services: { $in: [result.service] } },
-            { "transferCount.count": { $ne: 3 } },
+            // { services: { $in: [result.service] } },
+            // { "transferCount.length": { $lte: 2 } },
             {
               transferredBookings: {
                 $nin: [mongoose.Types.ObjectId(body.bookingId)],
@@ -445,23 +446,54 @@ exports.nearbyVendors = async (req, res) => {
             },
             {
               timeSlot: {
-                $and: [
-                  { start: result.timeSlot.start },
-                  { end: result.timeSlot.end },
-                  { bookingDate: { $ne: result.timeSlot.bookingDate } },
-                  { booked: false },
+                $all: [
+                  {
+                    $elemMatch: {
+                      $and: [
+                        { start: { $eq: "9:00 AM" } },
+                        { end: { $eq: "10:00 AM" } },
+                        {
+                          $or: [
+                            { bookingDate: { $eq: undefined } },
+                            { bookingDate: { $ne: "26/11/2022" } },
+                          ],
+                        },
+                        { booked: false },
+                      ],
+                    },
+                  },
                 ],
               },
             },
             {
               onLeave: {
-                $and: [
-                  { flag: false },
-                  { leaveDate: result.timeSlot.bookingDate },
+                $elemMatch: {
+                  $and: [
+                    { status: { $ne: "Approved" } },
+                    {
+                      $or: [
+                        // { date: { $eq: undefined } },
+                        { date: { $eq: "26/11/2022" } },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              emergencyLeave: {
+                $all: [
+                  {
+                    $elemMatch: {
+                      $and: [
+                        { status: { $ne: "Approved" } },
+                        { date: { $eq: "26/11/2022" } },
+                      ],
+                    },
+                  },
                 ],
               },
             },
-            { emergencyLeave: false },
           ],
         },
         maxDistance: 70000000,
@@ -676,5 +708,205 @@ exports.getVendorLocation = async (req, res) => {
       message: "Something went wrong",
       error: e.message,
     });
+  }
+};
+
+exports.leaveApproved = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        vendorId: Joi.string().required(),
+        date: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .send({ success: false, message: error.details[0].message });
+    }
+    let vendor = await Vendor.findOneAndUpdate(
+      {
+        _id: mongoose.Types.ObjectId(body.vendorId),
+        onLeave: {
+          $all: [{ $elemMatch: { date: body.date, status: "Applied" } }],
+        },
+      },
+      {
+        $set: {
+          "onLeave.$": {
+            status: "Approved",
+            date: body.date,
+            _id: null,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!vendor) {
+      return res
+        .status(404)
+        .send({ success: false, message: "No Match Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Vendor saved successfully with leaves",
+      vendor,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+exports.leaveDisapproved = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        vendorId: Joi.string().required(),
+        date: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .send({ success: false, message: error.details[0].message });
+    }
+    let vendor = await Vendor.findOneAndUpdate(
+      {
+        _id: mongoose.Types.ObjectId(body.vendorId),
+        onLeave: {
+          $all: [{ $elemMatch: { date: body.date, status: "Applied" } }],
+        },
+      },
+      {
+        $set: {
+          "onLeave.$": {
+            status: "Disapproved",
+            date: body.date,
+            _id: null,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!vendor) {
+      return res
+        .status(404)
+        .send({ success: false, message: "No Match Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Vendor saved successfully with leaves",
+      vendor,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+exports.emergencyLeaveApproved = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        vendorId: Joi.string().required(),
+        date: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .send({ success: false, message: error.details[0].message });
+    }
+    let vendor = await Vendor.findOneAndUpdate(
+      {
+        _id: mongoose.Types.ObjectId(body.vendorId),
+        emergencyLeave: {
+          $all: [{ $elemMatch: { date: body.date, status: "Applied" } }],
+        },
+      },
+      {
+        $set: {
+          "emergencyLeave.$": {
+            status: "Approved",
+            date: body.date,
+            _id: null,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!vendor) {
+      return res
+        .status(404)
+        .send({ success: false, message: "No Match Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Vendor saved successfully with leaves",
+      vendor,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+exports.emergencyLeaveDisapproved = async (req, res) => {
+  try {
+    const { body } = req;
+    console.log(body);
+    const { error } = Joi.object()
+      .keys({
+        vendorId: Joi.string().required(),
+        date: Joi.string().required(),
+      })
+      .required()
+      .validate(body);
+    if (error) {
+      return res
+        .status(400)
+        .send({ success: false, message: error.details[0].message });
+    }
+    let vendor = await Vendor.findOneAndUpdate(
+      {
+        _id: mongoose.Types.ObjectId(body.vendorId),
+        emergencyLeave: {
+          $all: [{ $elemMatch: { date: body.date, status: "Applied" } }],
+        },
+      },
+      {
+        $set: {
+          "emergencyLeave.$": {
+            status: "Disapproved",
+            date: body.date,
+            _id: null,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!vendor) {
+      return res
+        .status(404)
+        .send({ success: false, message: "No Match Found" });
+    }
+    return res.status(200).send({
+      success: true,
+      message: "Vendor saved successfully with leaves",
+      vendor,
+    });
+  } catch (e) {
+    return res.status(500).send({ success: false, message: e.message });
   }
 };
