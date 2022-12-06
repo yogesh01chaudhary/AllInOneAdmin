@@ -261,7 +261,7 @@ exports.getVendorsRequestedService = async (req, res) => {
         $facet: {
           totalData: [
             {
-              $match: {},
+              $match: { "requestedService.0": { $exists: true } },
             },
             {
               $project: {
@@ -283,7 +283,12 @@ exports.getVendorsRequestedService = async (req, res) => {
             },
           ],
 
-          totalCount: [{ $count: "count" }],
+          totalCount: [
+            {
+              $match: { "requestedService.0": { $exists: true } },
+            },
+            { $count: "count" },
+          ],
         },
       },
     ]);
@@ -708,6 +713,49 @@ exports.getVendorLocation = async (req, res) => {
       message: "Something went wrong",
       error: e.message,
     });
+  }
+};
+
+exports.getVendorsAppliedForLeave = async (req, res) => {
+  try {
+    console.log(req.query);
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: {} },
+            {
+              $project: {
+                // password: 0,
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                onLeave: 1,
+                emergencyLeave: 1,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendors = data[0].totalData;
+
+    if (!vendors) {
+      return res
+        .status(200)
+        .send({ success: true, message: "No vendors found" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Vendors found", vendors, count });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
   }
 };
 

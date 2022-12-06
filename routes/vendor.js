@@ -16,6 +16,7 @@ const {
   leaveDisapproved,
   emergencyLeaveApproved,
   emergencyLeaveDisapproved,
+  getVendorsAppliedForLeave,
 } = require("../controllers/vendor");
 const { auth } = require("../middleware/auth");
 const { isAdmin } = require("../middleware/isAdmin");
@@ -47,6 +48,7 @@ router.get("/vendorsForUser/", auth, isAdmin, getVendorsForUser);
 router.get("/getVendorLocation", auth, isAdmin, getVendorLocation);
 
 // ************************************LEAVE***************************************************************************************//
+router.get("/getVendorsAppliedLeave", auth, isAdmin, getVendorsAppliedForLeave);
 router.put("/leaveApproved", auth, isAdmin, leaveApproved);
 router.put("/leaveDisapproved", auth, isAdmin, leaveDisapproved);
 router.put("/emergencyLeaveApproved", auth, isAdmin, emergencyLeaveApproved);

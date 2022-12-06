@@ -190,13 +190,13 @@ const VendorSchema = new Schema(
 
     onDuty: [
       {
-        status: Boolean,
         loginTime: String,
         logoutTime: String,
         date: String,
       },
       { _id: false },
     ],
+    onDutyStatus: { type: Boolean, enum: [true, false], defualt: false },
     rating: [
       {
         userId: {
