@@ -17,6 +17,11 @@ const {
   emergencyLeaveApproved,
   emergencyLeaveDisapproved,
   getVendorsAppliedForLeave,
+  getLoggedInVendors,
+  getLoggedOutVendors,
+  checkTimingOfVendors,
+  checkTimingOfVendor,
+  checkVendorOnDutyStatus,
 } = require("../controllers/vendor");
 const { auth } = require("../middleware/auth");
 const { isAdmin } = require("../middleware/isAdmin");
@@ -53,5 +58,13 @@ router.put("/leaveApproved", auth, isAdmin, leaveApproved);
 router.put("/leaveDisapproved", auth, isAdmin, leaveDisapproved);
 router.put("/emergencyLeaveApproved", auth, isAdmin, emergencyLeaveApproved);
 router.put("/emergencyLeaveDisapproved", auth, isAdmin, emergencyLeaveDisapproved);
+
+// ************************************onDutyStatus***************************************************************************************//
+router.get("/loggedInVendors", auth, isAdmin, getLoggedInVendors);
+router.get("/loggedOutVendors", auth, isAdmin, getLoggedOutVendors);
+router.get("/timingOfVendors", auth, isAdmin, checkTimingOfVendors);
+router.get("/timingOfVendor", auth, isAdmin, checkTimingOfVendor);
+router.get("/onDutyStatus", auth, isAdmin, checkVendorOnDutyStatus);
+
 
 module.exports = router;

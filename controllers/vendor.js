@@ -958,3 +958,244 @@ exports.emergencyLeaveDisapproved = async (req, res) => {
     return res.status(500).send({ success: false, message: e.message });
   }
 };
+
+exports.getLoggedInVendors = async (req, res) => {
+  try {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: { onDutyStatus: true } },
+            {
+              $project: {
+                // password: 0,
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                onDuty: 1,
+                onDutyStatus: 1,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [{ $match: { onDutyStatus: true } }, { $count: "count" }],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendors = data[0].totalData;
+
+    if (!vendors) {
+      return res
+        .status(200)
+        .send({ success: true, message: "No vendors found" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Vendors found", vendors, count });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.getLoggedOutVendors = async (req, res) => {
+  try {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: { onDutyStatus: false } },
+            {
+              $project: {
+                // password: 0,
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                onDuty: 1,
+                onDutyStatus: 1,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            { $match: { onDutyStatus: false } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendors = data[0].totalData;
+
+    if (!vendors) {
+      return res
+        .status(200)
+        .send({ success: true, message: "No vendors found" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Vendors found", vendors, count });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.checkTimingOfVendor = async (req, res) => {
+  try {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    console.log(req.body)
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            {
+              $match: {
+                _id: mongoose.Types.ObjectId(req.body.vendorId),
+              },
+            },
+            {
+              $project: {
+                // password: 0,
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                onDutyStatus: 1,
+                onDuty: 1,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            {
+              $match: {
+                _id: mongoose.Types.ObjectId(req.body.vendorId),
+              },
+            },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendors = data[0].totalData;
+    console.log(vendors);
+    if (!vendors) {
+      return res
+        .status(200)
+        .send({ success: true, message: "Something went wrong" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Vendor found", vendors, count });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.checkTimingOfVendors = async (req, res) => {
+  try {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            {
+              $match: {},
+            },
+            {
+              $project: {
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                onDutyStatus: 1,
+                onDuty: 1,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            {
+              $match: {},
+            },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendors = data[0].totalData;
+
+    if (!vendors) {
+      return res
+        .status(200)
+        .send({ success: true, message: "No vendors found" });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Vendors found", vendors, count });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
+
+exports.checkVendorOnDutyStatus = async (req, res) => {
+  try {
+    const limitValue = +req.query.limit || 6;
+    const skipValue = +req.query.skip || 0;
+    const data = await Vendor.aggregate([
+      {
+        $facet: {
+          totalData: [
+            { $match: { _id: mongoose.Types.ObjectId(req.body.vendorId) } },
+            {
+              $project: {
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                onDuty: 1,
+                onDutyStatus: 1,
+              },
+            },
+            { $skip: skipValue },
+            { $limit: limitValue },
+          ],
+          totalCount: [
+            { $match: { _id: mongoose.Types.ObjectId(req.body.vendorId) } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+    let count = data[0].totalCount[0];
+    let vendors = data[0].totalData;
+
+    if (!vendors) {
+      return res
+        .status(200)
+        .send({ success: true, message: "No vendors found" });
+    }
+    if (vendors[0].onDutyStatus === false) {
+      return res.status(200).send({
+        success: true,
+        message: "Vendor Is Logged Off",
+        vendors,
+        count,
+      });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Vendor Is Logged In", vendors, count });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.name });
+  }
+};
