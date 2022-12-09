@@ -423,7 +423,9 @@ exports.nearbyVendors = async (req, res) => {
         .status(200)
         .send({ success: false, message: "Booking Not Found" });
     }
+    
     result = result[0];
+    console.log(result.timeSlot);
     if (!result.userData[0].location.coordinates) {
       return res
         .status(400)
@@ -439,10 +441,10 @@ exports.nearbyVendors = async (req, res) => {
           ],
         },
         distanceField: "distance",
-        key: "location.coordinates",
+        key: "location",
         query: {
           $and: [
-            // { services: { $in: [result.service] } },
+            { services: { $in: [result.service] } },
             // { "transferCount.length": { $lte: 2 } },
             {
               transferredBookings: {
@@ -455,12 +457,12 @@ exports.nearbyVendors = async (req, res) => {
                   {
                     $elemMatch: {
                       $and: [
-                        { start: { $eq: "9:00 AM" } },
-                        { end: { $eq: "10:00 AM" } },
+                        { start: { $eq: result.timeSlot.start } },
+                        { end: { $eq: result.timeSlot.end } },
                         {
                           $or: [
                             { bookingDate: { $eq: undefined } },
-                            { bookingDate: { $ne: "26/11/2022" } },
+                            { bookingDate: { $ne: result.timeSlot.bookingDate } },
                           ],
                         },
                         { booked: false },
@@ -478,7 +480,7 @@ exports.nearbyVendors = async (req, res) => {
                     {
                       $or: [
                         // { date: { $eq: undefined } },
-                        { date: { $eq: "26/11/2022" } },
+                        { date: { $eq: result.timeSlot.bookingDate } },
                       ],
                     },
                   ],
@@ -492,7 +494,7 @@ exports.nearbyVendors = async (req, res) => {
                     $elemMatch: {
                       $and: [
                         { status: { $ne: "Approved" } },
-                        { date: { $eq: "26/11/2022" } },
+                        { date: { $eq: result.timeSlot.bookingDate } },
                       ],
                     },
                   },
@@ -1050,7 +1052,7 @@ exports.checkTimingOfVendor = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
     const skipValue = +req.query.skip || 0;
-    console.log(req.body)
+    console.log(req.body);
     const data = await Vendor.aggregate([
       {
         $facet: {

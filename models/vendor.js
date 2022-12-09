@@ -86,10 +86,12 @@ const VendorSchema = new Schema(
     },
     email: {
       type: String,
-      unique: true,
     },
     password: {
       type: String,
+    },
+    deviceToken:{
+      type:String
     },
     currentAddress: {
       address: {
@@ -195,7 +197,6 @@ const VendorSchema = new Schema(
     timeSlot: [SlotSchema],
     onLeave: [LeaveSchema],
     emergencyLeave: [EmergencyLeaveSchema],
-
     onDuty: [onDutySchema],
     onDutyStatus: { type: Boolean, enum: [true, false], default: false },
     rating: [
