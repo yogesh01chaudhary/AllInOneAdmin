@@ -9,6 +9,7 @@ const bannerRouter = require("./routes/banner");
 const bookingRouter = require("./routes/booking");
 const subAdminRouter = require("./routes/subAdmin");
 const cartRouter = require("./routes/cart");
+const reviewRouter = require("./routes/review");
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
@@ -20,7 +21,8 @@ app.use("/api/v1/admin", categoryRouter);
 app.use("/api/v1/admin", bannerRouter);
 app.use("/api/v1/admin", bookingRouter);
 app.use("/api/v1/admin", subAdminRouter);
-app.use("/api/v1/admin",cartRouter);
+app.use("/api/v1/admin", cartRouter);
+app.use("/api/v1/admin", reviewRouter);
 
 require("dotenv/config");
 const { connect } = require("./connection/dbConnection");

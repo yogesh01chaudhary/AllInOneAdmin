@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 
+//SlotSchema
 var SlotSchema = new Schema(
   {
     start: String,
@@ -12,6 +13,8 @@ var SlotSchema = new Schema(
   },
   { _id: false }
 );
+
+//LeaveSchema
 var LeaveSchema = new Schema(
   {
     date: {
@@ -25,6 +28,8 @@ var LeaveSchema = new Schema(
   },
   { _id: false }
 );
+
+//EmergencyLeaveSchema
 var EmergencyLeaveSchema = new Schema(
   {
     date: {
@@ -38,6 +43,8 @@ var EmergencyLeaveSchema = new Schema(
   },
   { _id: false }
 );
+
+//BookingDutySchema
 var BookingDutySchema = new Schema({
   bookingId: {
     type: Schema.Types.ObjectId,
@@ -49,6 +56,8 @@ var BookingDutySchema = new Schema({
     type: String,
   },
 });
+
+//OnDutySchema
 var onDutySchema = new Schema(
   {
     loginTime: String,
@@ -57,6 +66,26 @@ var onDutySchema = new Schema(
   },
   { _id: false }
 );
+
+//ReviewSchema
+var ReviewSchema = new Schema(
+  {
+    name: { type: String },
+    rating: { type: Number },
+    comment: { type: String },
+    user: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "user",
+    },
+  },
+  {
+    timestamps: true,
+    _id: false,
+  }
+);
+
+//VendorSchema
 const VendorSchema = new Schema(
   {
     firstName: {
@@ -90,8 +119,8 @@ const VendorSchema = new Schema(
     password: {
       type: String,
     },
-    deviceToken:{
-      type:String
+    deviceToken: {
+      type: String,
     },
     currentAddress: {
       address: {
@@ -199,19 +228,9 @@ const VendorSchema = new Schema(
     emergencyLeave: [EmergencyLeaveSchema],
     onDuty: [onDutySchema],
     onDutyStatus: { type: Boolean, enum: [true, false], default: false },
-    rating: [
-      {
-        userId: {
-          type: Schema.Types.ObjectId,
-        },
-        star: {
-          type: Number,
-        },
-        comments: {
-          type: String,
-        },
-      },
-    ],
+    reviews: [ReviewSchema],
+    rating: { type: Number, default: 0 },
+    reviewNumber: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
