@@ -46,7 +46,7 @@ router.put("/grantServicesToVendor/:id", auth, isAdmin, grantServicesToVendor);
 
 // **********************************findNearbyVendorsAndSendNotification********************************************************************************//
 router.get("/nearbyVendors", auth, isAdmin, nearbyVendors);
-router.get("/sendNotification/", auth, isAdmin, sendNotification);
+router.put("/sendNotification", auth, isAdmin, sendNotification);
 
 // ************************************findNearbtyVendorsExtra***************************************************************************************//
 router.get("/vendorsForUser/", auth, isAdmin, getVendorsForUser);
