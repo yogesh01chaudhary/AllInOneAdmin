@@ -418,7 +418,6 @@ exports.nearbyVendors = async (req, res) => {
     ]);
 
     let result = data[0].totalData;
-    // console.log(result[0].userData)
 
     if (result.length === 0) {
       return res
@@ -427,7 +426,6 @@ exports.nearbyVendors = async (req, res) => {
     }
 
     result = result[0];
-    console.log(result.service, result.serviceData);
     if (!result.userData[0].location.coordinates) {
       return res
         .status(400)
@@ -446,9 +444,7 @@ exports.nearbyVendors = async (req, res) => {
         key: "location",
         query: {
           $and: [
-            // { services: { $in: [result.service] } },
             { services: { $in: [mongoose.Types.ObjectId(result.service)] } },
-            // { "transferCount.length": { $lte: 2 } },
             {
               transferredBookings: {
                 $nin: [mongoose.Types.ObjectId(body.bookingId)],
@@ -477,40 +473,6 @@ exports.nearbyVendors = async (req, res) => {
                 ],
               },
             },
-            // { onDutyStatus: true },
-            // {
-            //   onLeave: {
-            //     $all: [
-            //       {
-            //         $elemMatch: {
-            //           $or: [
-            //             {
-            //               $and: [
-            //                 { date: { $eq: result.timeSlot.bookingDate } },
-            //                 { status: { $ne: "Approved" } },
-            //               ],
-            //             },
-            //             // { date: { eq: undefined } },
-            //           ],
-            //         },
-            //       },
-            //     ],
-            //   },
-            // },
-            // {
-            //   emergencyLeave: {
-            //     $all: [
-            //       {
-            //         $elemMatch: {
-            //           $and: [
-            //             { status: { $ne: "Approved" } },
-            //             { date: { $eq: result.timeSlot.bookingDate } },
-            //           ],
-            //         },
-            //       },
-            //     ],
-            //   },
-            // },
           ],
         },
         maxDistance: 7000000,
@@ -538,36 +500,33 @@ exports.nearbyVendors = async (req, res) => {
     if (vendors.length === 0) {
       return res.status(200).send({
         success: true,
-        message: "No Nearest Vendors Found",
+        message: "No Nearest Vendors Found, Internal Team Will Handle",
       });
     }
-    let mainVendors = [];
+    let mainVendors = {};
     const getVendors = async (vendorId) => {
       let vendor = await Vendor.findById({ _id: vendorId });
-      // console.log("vendor", vendor);
-
-      if (vendor.transferCount) {
+      if (!vendor) {
+        return;
+      }
+      console.log(vendor.transferCount, mainVendors, mainVendors[vendorId]);
+      if (mainVendors[vendorId] && vendor.transferCount) {
         let vendorCount = await TransferCount.findOne({
           _id: vendor.transferCount,
           vendor: vendorId,
         });
         console.log("vendorCount", vendorCount);
-        if (vendorCount && (vendorCount.count == 3)) {
+        if (vendorCount && vendorCount.count == 3) {
           console.log("before", mainVendors);
-          let index = mainVendors.indexOf(vendorId);
-          if (index !== -1) {
-            mainVendors.splice(index, 1);
-          }
+          delete mainVendors[vendorId];
           console.log("after", mainVendors);
         }
       }
 
-      console.log("onLeave", vendor.onLeave);
-
-      if (vendor.onLeave.length > 0) {
+      console.log("onLeave", vendor.onLeave, mainVendors[vendorId]);
+      if (mainVendors[vendorId] && vendor.onLeave.length > 0) {
         let vendorOnLeave = await Vendor.find({
           _id: vendorId,
-          // onLeave: { $elemMatch: { date: { $eq: "25/12/2022" } } },
           onLeave: {
             $all: [
               {
@@ -583,27 +542,21 @@ exports.nearbyVendors = async (req, res) => {
         });
         console.log("vendorOnLeave", vendorOnLeave);
         if (vendorOnLeave.length > 0) {
-          // console.log(mainVendors.pop());
-          let index = mainVendors.indexOf(vendorId);
-          if (index !== -1) {
-            mainVendors.splice(index, 1);
-          }
-          console.log(mainVendors);
+          delete mainVendors[vendorId];
+          console.log("mainVendors Leave", mainVendors);
         }
       }
 
       console.log("emergencyLeave", vendor.emergencyLeave);
-      if (vendor.emergencyLeave.length > 0) {
+      if (mainVendors[vendorId] && vendor.emergencyLeave.length > 0) {
         let vendorEmergencyLeave = await Vendor.find({
           _id: vendorId,
-          // emergencyLeave: { $elemMatch: { date: { $eq: "25/12/2022" } } },
           emergencyLeave: {
             $all: [
               {
                 $elemMatch: {
                   $and: [
-                    { date: { $eq: result.timeSlot.bookingDate
-                     } },
+                    { date: { $eq: result.timeSlot.bookingDate } },
                     { status: { $eq: "Approved" } },
                   ],
                 },
@@ -613,10 +566,7 @@ exports.nearbyVendors = async (req, res) => {
         });
         console.log("vendorEmergencyLeave", vendorEmergencyLeave);
         if (vendorEmergencyLeave.length > 0) {
-          let index = mainVendors.indexOf(vendorId);
-          if (index !== -1) {
-            mainVendors.splice(index, 1);
-          }
+          delete mainVendors[vendorId];
           console.log(mainVendors);
         }
       }
@@ -624,15 +574,17 @@ exports.nearbyVendors = async (req, res) => {
 
     for (i = 0; i < vendors.length; i++) {
       console.log(vendors[i]._id);
-      mainVendors.push(vendors[i]._id);
+      key = vendors[i]._id;
+      value = vendors[i].deviceToken;
+      mainVendors[key] = value;
       await getVendors(vendors[i]._id);
     }
     console.log("mainVendors", mainVendors);
     return res.status(200).send({
       success: true,
       message: "Nearest Vendors Fetched successfully",
-      vendors,
-      totalVendors,
+      // vendors,
+      // totalVendors,
       mainVendors,
     });
   } catch (e) {
@@ -650,9 +602,9 @@ exports.sendNotification = async (req, res) => {
     text: body.text,
     title: body.title,
   };
-  // let serverKey = `key=AAAAejUYQ9g:APA91bFxMDmzSGGZlJxOOYL8RlqRR3l06HmDMcycUPH5lsIi0yqUXLWNQPmKLAkQELGpWuu0pwT1wAwhpTTVJMq-xtJHzd7Vg_zNUx9WVB7XIqas043HZ5mhPFN_eQ-FF-Qbvly2Z27f`;
-  let serverKey = `key=AAAAOgDviAs:APA91bE6B-Xx2BiR-xLXqANUlso97T7nI3BRLrqoC9-WZ2won047G7v_YhDpTsG3fHPlR0pmiUG2uyrDC5lLSyWurFnB6LSoE4GkEp-qX6k07-VGK8pBMXt3FznrQRrUyT6pk1hjLEAU`;
-  let api = "https://fcm.googleapis.com/fcm/send";
+  let serverKey = `key=${process.env.SERVER_KEY}`;
+  let api = `${process.env.GOOGLE_FIREBASE_API}`;
+  console.log(serverKey, api);
   try {
     await axios.post(
       api,
@@ -786,6 +738,7 @@ exports.getVendorsForUser = async (req, res) => {
   }
 };
 
+//EXTRA
 //@desc get nearby Vendors For Users
 //@route GET/vendor/getVendorLocation
 //@access Private

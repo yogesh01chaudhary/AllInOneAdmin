@@ -1,3 +1,4 @@
+require("dotenv/config");
 const { Schema, model } = require("mongoose");
 const TransferCountSchema = new Schema({
   vendor: {
@@ -8,7 +9,11 @@ const TransferCountSchema = new Schema({
     type: Number,
     default: 0,
   },
-  createdAt: { type: Date, expires: "5m", default: Date.now },
+  createdAt: {
+    type: Date,
+    expires: `${process.env.EXPIRY_TTL}`,
+    default: Date.now,
+  },
 });
 
 module.exports = model("transferCount", TransferCountSchema);
