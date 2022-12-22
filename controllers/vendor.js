@@ -372,10 +372,10 @@ exports.grantServicesToVendor = async (req, res) => {
 //@access Private
 exports.nearbyVendors = async (req, res) => {
   try {
-    const { body } = req;
+    const { params } = req;
     const { error } = Joi.object()
       .keys({ bookingId: Joi.string().required() })
-      .validate(body);
+      .validate(params);
     if (error) {
       return res
         .status(400)
@@ -384,7 +384,7 @@ exports.nearbyVendors = async (req, res) => {
     let matchQuery = {
       $match: {
         $and: [
-          { _id: mongoose.Types.ObjectId(body.bookingId) },
+          { _id: mongoose.Types.ObjectId(params.bookingId) },
           { bookingStatus: "Pending" },
         ],
       },
@@ -447,32 +447,32 @@ exports.nearbyVendors = async (req, res) => {
             { services: { $in: [mongoose.Types.ObjectId(result.service)] } },
             {
               transferredBookings: {
-                $nin: [mongoose.Types.ObjectId(body.bookingId)],
+                $nin: [mongoose.Types.ObjectId(params.bookingId)],
               },
             },
-            {
-              timeSlot: {
-                $all: [
-                  {
-                    $elemMatch: {
-                      $and: [
-                        { start: { $eq: result.timeSlot.start } },
-                        { end: { $eq: result.timeSlot.end } },
-                        {
-                          $or: [
-                            { bookingDate: { $eq: undefined } },
-                            {
-                              bookingDate: { $eq: result.timeSlot.bookingDate },
-                            },
-                          ],
-                        },
-                        { booked: false },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
+            // {
+            //   timeSlot: {
+            //     $all: [
+            //       {
+            //         $elemMatch: {
+            //           $and: [
+            //             { start: { $eq: result.timeSlot.start } },
+            //             { end: { $eq: result.timeSlot.end } },
+            //             {
+            //               $or: [
+            //                 { bookingDate: { $eq: undefined } },
+            //                 {
+            //                   bookingDate: { $eq: result.timeSlot.bookingDate },
+            //                 },
+            //               ],
+            //             },
+            //             { booked: false },
+            //           ],
+            //         },
+            //       },
+            //     ],
+            //   },
+            // },
           ],
         },
         maxDistance: 7000000,
@@ -543,7 +543,7 @@ exports.nearbyVendors = async (req, res) => {
         console.log("vendorOnLeave", vendorOnLeave);
         if (vendorOnLeave.length > 0) {
           delete mainVendors[vendorId];
-          console.log("mainVendors Leave", mainVendors);
+          console.log("mainVendorsLeave", mainVendors);
         }
       }
 
@@ -568,6 +568,34 @@ exports.nearbyVendors = async (req, res) => {
         if (vendorEmergencyLeave.length > 0) {
           delete mainVendors[vendorId];
           console.log(mainVendors);
+        }
+      }
+
+      console.log("timeSlot", vendor.timeSlot, mainVendors[vendorId]);
+      if (mainVendors[vendorId] && vendor.timeSlot.length > 0) {
+        let vendorTimeSlot = await Vendor.find({
+          _id: vendorId,
+          timeSlot: {
+            $all: [
+              {
+                $elemMatch: {
+                  $and: [
+                    { start: { $eq: result.timeSlot.start } },
+                    { end: { $eq: result.timeSlot.end } },
+                    {
+                      bookingDate: { $eq: result.timeSlot.bookingDate },
+                    },
+                    { booked: true },
+                  ],
+                },
+              },
+            ],
+          },
+        });
+        console.log("vendorTimeSlot", vendorTimeSlot);
+        if (vendorTimeSlot.length > 0) {
+          delete mainVendors[vendorId];
+          console.log("mainVendors TimeSlot", mainVendors);
         }
       }
     };
@@ -595,7 +623,7 @@ exports.nearbyVendors = async (req, res) => {
 // new API TO SEND PUSH NOTIFICATION TO ALL FETCHED VENDORS BOOKNGID WILL BE PASSED TO VENDRS
 // vendors will accept and transfer the request
 exports.sendNotification = async (req, res) => {
-  const { body } = req;
+  const { params } = req;
   let deviceToken = body.deviceToken;
   let registration_ids = [deviceToken];
   let notification = {
