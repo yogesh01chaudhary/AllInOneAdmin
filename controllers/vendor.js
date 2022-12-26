@@ -41,29 +41,48 @@ exports.getVendors = async (req, res) => {
 };
 
 exports.acceptRequest = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     const { body } = req;
-    let vendor = await Vendor.findByIdAndUpdate(
-      body.id,
-      { requestStatus: "accepted" },
-      { new: true }
-    );
-    if (!vendor) {
+    let data = await Vendor.findById(body.id);
+    if (!data) {
       return res.status(400).send({
         success: false,
         message: "No vendor found to provide request",
       });
     }
+    let vendor = await Vendor.findByIdAndUpdate(
+      body.id,
+      {
+        requestStatus: "accepted",
+        $addToSet: { services: { $each: data.requestedService } },
+        requestedService: [],
+      },
+      { new: true, session }
+    );
+    // if (!vendor) {
+    //   return res.status(400).send({
+    //     success: false,
+    //     message: "No vendor found to provide request",
+    //   });
+    // }
     let generatedPassword = await createPassword(8, true, true);
 
     let hashedPassword = await bcrypt.hash(generatedPassword, 10);
     vendor = await Vendor.findByIdAndUpdate(
       body.id,
       { password: hashedPassword },
-      { new: true }
+      { new: true, session }
     );
     console.log(hashedPassword, generatedPassword);
-
+    if (!vendor.firstName && !vendor.email) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res
+        .status(400)
+        .send({ success: false, message: "EmailID Not Provided" });
+    }
     const mailResponse = await sendMail(
       vendor.firstName,
       vendor.email,
@@ -72,6 +91,8 @@ exports.acceptRequest = async (req, res) => {
     let [a, ...p] = mailResponse.split(",");
     // p = p.join(",");
     p = JSON.parse(p.join(","));
+    await session.commitTransaction();
+    await session.endSession();
     res.status(200).send({
       success: true,
       message: "User Request Accepted",
@@ -79,6 +100,8 @@ exports.acceptRequest = async (req, res) => {
       vendor,
     });
   } catch (e) {
+    await session.abortTransaction();
+    await session.endSession();
     return res.status(500).send({ success: false, error: e.message });
   }
 };
@@ -623,16 +646,15 @@ exports.nearbyVendors = async (req, res) => {
 // new API TO SEND PUSH NOTIFICATION TO ALL FETCHED VENDORS BOOKNGID WILL BE PASSED TO VENDRS
 // vendors will accept and transfer the request
 exports.sendNotification = async (req, res) => {
-  const { params } = req;
+  const { body } = req;
   let deviceToken = body.deviceToken;
   let registration_ids = [deviceToken];
   let notification = {
-    text: body.text,
+    body: { bookingId: body.bookingId, message: body.message },
     title: body.title,
   };
   let serverKey = `key=${process.env.SERVER_KEY}`;
   let api = `${process.env.GOOGLE_FIREBASE_API}`;
-  console.log(serverKey, api);
   try {
     await axios.post(
       api,
