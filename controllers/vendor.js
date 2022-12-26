@@ -647,6 +647,7 @@ exports.nearbyVendors = async (req, res) => {
 // vendors will accept and transfer the request
 exports.sendNotification = async (req, res) => {
   const { body } = req;
+  console.log(body);
   let deviceToken = body.deviceToken;
   let registration_ids = [deviceToken];
   let notification = {
