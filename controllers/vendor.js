@@ -678,6 +678,7 @@ exports.sendNotification = async (req, res) => {
       }
     );
     let failed = {};
+    let passed = {};
     if (result.data.failure) {
       result.data.results.map((item, index) => {
         if (item.error) {
@@ -687,15 +688,16 @@ exports.sendNotification = async (req, res) => {
       for (let i = 0; i < body.deviceToken.length; i++) {
         if (i in failed) {
           failed[i] = body.deviceToken[i];
+        } else {
+          passed[i] = body.deviceToken[i];
         }
       }
-      return res
-        .status(400)
-        .send({
-          success: false,
-          message: "Notification Sent Successfully Except These",
-          failed,
-        });
+      return res.status(400).send({
+        success: false,
+        message: "Notification Sent Successfully Except These",
+        failed,
+        passed,
+      });
     }
     return res
       .status(200)
