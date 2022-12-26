@@ -647,9 +647,20 @@ exports.nearbyVendors = async (req, res) => {
 // vendors will accept and transfer the request
 exports.sendNotification = async (req, res) => {
   const { body } = req;
-  console.log(body);
-  let deviceToken = body.deviceToken;
-  let registration_ids = [deviceToken];
+  const { error } = Joi.object()
+    .keys({
+      deviceToken: Joi.array().items(Joi.string().required()),
+      message: Joi.string().required(),
+      bookingId: Joi.string().required(),
+      title: Joi.string().required(),
+    })
+    .validate(body);
+  if (error) {
+    return res
+      .status(400)
+      .send({ success: false, message: error.details[0].message });
+  }
+  let registration_ids = body.deviceToken;
   let notification = {
     body: { bookingId: body.bookingId, message: body.message },
     title: body.title,
@@ -657,7 +668,7 @@ exports.sendNotification = async (req, res) => {
   let serverKey = `key=${process.env.SERVER_KEY}`;
   let api = `${process.env.GOOGLE_FIREBASE_API}`;
   try {
-    await axios.post(
+    let result = await axios.post(
       api,
       { registration_ids, notification },
       {
@@ -666,6 +677,26 @@ exports.sendNotification = async (req, res) => {
         },
       }
     );
+    let failed = {};
+    if (result.data.failure) {
+      result.data.results.map((item, index) => {
+        if (item.error) {
+          failed[index] = "";
+        }
+      });
+      for (let i = 0; i < body.deviceToken.length; i++) {
+        if (i in failed) {
+          failed[i] = body.deviceToken[i];
+        }
+      }
+      return res
+        .status(400)
+        .send({
+          success: false,
+          message: "Notification Sent Successfully Except These",
+          failed,
+        });
+    }
     return res
       .status(200)
       .send({ success: true, message: "Notification sent successfully" });
