@@ -532,21 +532,21 @@ exports.nearbyVendors = async (req, res) => {
       if (!vendor) {
         return;
       }
-      console.log(vendor.transferCount, mainVendors, mainVendors[vendorId]);
+      // console.log(vendor.transferCount, mainVendors, mainVendors[vendorId]);
       if (mainVendors[vendorId] && vendor.transferCount) {
         let vendorCount = await TransferCount.findOne({
           _id: vendor.transferCount,
           vendor: vendorId,
         });
-        console.log("vendorCount", vendorCount);
+        // console.log("vendorCount", vendorCount);
         if (vendorCount && vendorCount.count == 3) {
-          console.log("before", mainVendors);
+          // console.log("before", mainVendors);
           delete mainVendors[vendorId];
-          console.log("after", mainVendors);
+          // console.log("after", mainVendors);
         }
       }
 
-      console.log("onLeave", vendor.onLeave, mainVendors[vendorId]);
+      // console.log("onLeave", vendor.onLeave, mainVendors[vendorId]);
       if (mainVendors[vendorId] && vendor.onLeave.length > 0) {
         let vendorOnLeave = await Vendor.find({
           _id: vendorId,
@@ -563,14 +563,14 @@ exports.nearbyVendors = async (req, res) => {
             ],
           },
         });
-        console.log("vendorOnLeave", vendorOnLeave);
+        // console.log("vendorOnLeave", vendorOnLeave);
         if (vendorOnLeave.length > 0) {
           delete mainVendors[vendorId];
-          console.log("mainVendorsLeave", mainVendors);
+          // console.log("mainVendorsLeave", mainVendors);
         }
       }
 
-      console.log("emergencyLeave", vendor.emergencyLeave);
+      // console.log("emergencyLeave", vendor.emergencyLeave);
       if (mainVendors[vendorId] && vendor.emergencyLeave.length > 0) {
         let vendorEmergencyLeave = await Vendor.find({
           _id: vendorId,
@@ -587,14 +587,14 @@ exports.nearbyVendors = async (req, res) => {
             ],
           },
         });
-        console.log("vendorEmergencyLeave", vendorEmergencyLeave);
+        // console.log("vendorEmergencyLeave", vendorEmergencyLeave);
         if (vendorEmergencyLeave.length > 0) {
           delete mainVendors[vendorId];
           console.log(mainVendors);
         }
       }
 
-      console.log("timeSlot", vendor.timeSlot, mainVendors[vendorId]);
+      // console.log("timeSlot", vendor.timeSlot, mainVendors[vendorId]);
       if (mainVendors[vendorId] && vendor.timeSlot.length > 0) {
         let vendorTimeSlot = await Vendor.find({
           _id: vendorId,
@@ -615,28 +615,30 @@ exports.nearbyVendors = async (req, res) => {
             ],
           },
         });
-        console.log("vendorTimeSlot", vendorTimeSlot);
+        // console.log("vendorTimeSlot", vendorTimeSlot);
         if (vendorTimeSlot.length > 0) {
           delete mainVendors[vendorId];
-          console.log("mainVendors TimeSlot", mainVendors);
+          // console.log("mainVendors TimeSlot", mainVendors);
         }
       }
     };
 
     for (i = 0; i < vendors.length; i++) {
-      console.log(vendors[i]._id);
+      // console.log(vendors[i]._id);
       key = vendors[i]._id;
-      value = vendors[i].deviceToken;
+      value = vendors[i];
       mainVendors[key] = value;
       await getVendors(vendors[i]._id);
     }
-    console.log("mainVendors", mainVendors);
+    // console.log("mainVendors", mainVendors);
+
     return res.status(200).send({
       success: true,
       message: "Nearest Vendors Fetched successfully",
       // vendors,
       // totalVendors,
-      mainVendors,
+      mainVendors: Object.values(mainVendors),
+      count: Object.keys(mainVendors).length,
     });
   } catch (e) {
     return res.status(500).send({ success: false, message: e.message });
