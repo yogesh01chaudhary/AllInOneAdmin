@@ -468,6 +468,7 @@ exports.nearbyVendors = async (req, res) => {
         query: {
           $and: [
             { services: { $in: [mongoose.Types.ObjectId(result.service)] } },
+            { requestStatus: "accepted" },
             {
               transferredBookings: {
                 $nin: [mongoose.Types.ObjectId(params.bookingId)],
@@ -590,7 +591,7 @@ exports.nearbyVendors = async (req, res) => {
         // console.log("vendorEmergencyLeave", vendorEmergencyLeave);
         if (vendorEmergencyLeave.length > 0) {
           delete mainVendors[vendorId];
-          console.log(mainVendors);
+          // console.log(mainVendors);
         }
       }
 
