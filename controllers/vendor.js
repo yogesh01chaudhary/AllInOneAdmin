@@ -6,6 +6,7 @@ const { sendMail, createPassword } = require("../helpers/sendPassword");
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const TransferCount = require("../models/transferCount");
+const NearByVendors = require("../models/nearByVendors");
 
 exports.getVendors = async (req, res) => {
   try {
@@ -631,18 +632,106 @@ exports.nearbyVendors = async (req, res) => {
       mainVendors[key] = value;
       await getVendors(vendors[i]._id);
     }
-    // console.log("mainVendors", mainVendors);
-
+    let vendorKeys = [];
+    for (let key in mainVendors) {
+      vendorKeys.push({ vendor: new mongoose.Types.ObjectId(key) });
+    }
+    let nearByVendors = await NearByVendors.findByIdAndUpdate(
+      {
+        _id: params.bookingId,
+      },
+      {
+        $addToSet: { vendors: { $each: vendorKeys } },
+      },
+      { new: true, upsert: true }
+    );
+    if (!nearByVendors) {
+      return res.status(500).send({
+        success: false,
+        message: "Something went wrong in saving nearByVendors",
+      });
+    }
     return res.status(200).send({
       success: true,
       message: "Nearest Vendors Fetched successfully",
       // vendors,
       // totalVendors,
+      nearByVendors,
       mainVendors: Object.values(mainVendors),
       count: Object.keys(mainVendors).length,
     });
   } catch (e) {
     return res.status(500).send({ success: false, message: e.message });
+  }
+};
+
+// @desc see  all booking of an user using userId
+// @route  GET/admin/bookingNearbyVendors
+// @acess Private
+exports.getBookingNearbyVendors = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    let matchQuery = {
+      $match: { _id: mongoose.Types.ObjectId(bookingId) },
+    };
+
+    let data = await NearByVendors.aggregate([
+      {
+        $facet: {
+          totalData: [
+            matchQuery,
+            { $project: { __v: 0 } },
+            // {
+            //   $lookup: {
+            //     from: "users",
+            //     localField: "userId",
+            //     foreignField: "_id",
+            //     as: "userData",
+            //   },
+            // },
+            // {
+            //   $lookup: {
+            //     from: "services",
+            //     localField: "service",
+            //     foreignField: "_id",
+            //     as: "serviceData",
+            //   },
+            // },
+            {
+              $lookup: {
+                from: "vendors",
+                localField: "vendors.vendor",
+                foreignField: "_id",
+                as: "vendorData",
+              },
+            },
+          ],
+          totalCount: [matchQuery, { $count: "count" }],
+        },
+      },
+    ]);
+
+    let newResult = await NearByVendors.findById(bookingId).populate(
+      "vendors.vendor"
+    );
+
+    let resultData = data[0].totalData;
+    let count = data[0].totalCount;
+
+    return res.status(200).send({
+      success: true,
+      message: "Bookings Fetched Successfully",
+      // resultData,
+      // count,
+      newResult
+    });
+  } catch (e) {
+    return res.status(500).send({
+      success: false,
+      message: "Something went wrong",
+      error: e.message,
+    });
   }
 };
 
@@ -663,9 +752,23 @@ exports.sendNotification = async (req, res) => {
       .status(400)
       .send({ success: false, message: error.details[0].message });
   }
+  let booking = await Booking.find({
+    _id: body.bookingId,
+    bookingStatus: "Pending",
+  });
+  if (!booking) {
+    return res
+      .status(500)
+      .send({ success: false, message: "Something went wrong" });
+  }
+  if (booking.length === 0) {
+    return res
+      .status(404)
+      .send({ success: false, message: "Booking Not Found" });
+  }
   let registration_ids = body.deviceToken;
   let notification = {
-    body: { bookingId: body.bookingId, message: body.message },
+    body: { booking, message: body.message },
     title: body.title,
   };
   let serverKey = `key=${process.env.SERVER_KEY}`;

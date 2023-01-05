@@ -22,6 +22,7 @@ const {
   checkTimingOfVendors,
   checkTimingOfVendor,
   checkVendorOnDutyStatus,
+  getBookingNearbyVendors,
 } = require("../controllers/vendor");
 const { auth } = require("../middleware/auth");
 const { isAdmin } = require("../middleware/isAdmin");
@@ -46,6 +47,7 @@ router.put("/grantServicesToVendor/:id", auth, isAdmin, grantServicesToVendor);
 
 // **********************************findNearbyVendorsAndSendNotification********************************************************************************//
 router.get("/nearbyVendors/:bookingId", auth, isAdmin, nearbyVendors);
+router.get("/bookingNearbyVendors/:bookingId", auth, isAdmin, getBookingNearbyVendors);
 router.put("/sendNotification", auth, isAdmin, sendNotification);
 
 // ************************************findNearbtyVendorsExtra***************************************************************************************//
