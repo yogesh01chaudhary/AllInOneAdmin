@@ -47,10 +47,12 @@ router.put("/grantServicesToVendor/:id", auth, isAdmin, grantServicesToVendor);
 
 // **********************************findNearbyVendorsAndSendNotification********************************************************************************//
 router.get("/nearbyVendors/:bookingId", auth, isAdmin, nearbyVendors);
-router.get("/bookingNearbyVendors/:bookingId", auth, isAdmin, getBookingNearbyVendors);
 router.put("/sendNotification", auth, isAdmin, sendNotification);
 
-// ************************************findNearbtyVendorsExtra***************************************************************************************//
+// *********************************getNearByVendorsFoundedForABookingFromnearbyCollection********************************************************************************//
+router.get("/bookingNearbyVendors/:bookingId", auth, isAdmin, getBookingNearbyVendors);
+
+// ************************************findNearbtyVendorsExtra*********not_in_use******************************************************************************//
 router.get("/vendorsForUser/", auth, isAdmin, getVendorsForUser);
 router.get("/getVendorLocation", auth, isAdmin, getVendorLocation);
 

@@ -8,6 +8,7 @@ const axios = require("axios");
 const TransferCount = require("../models/transferCount");
 const NearByVendors = require("../models/nearByVendors");
 
+// ********************************getVendorsWhoFilledTheForm******************************************************************************** //
 exports.getVendors = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
@@ -41,6 +42,7 @@ exports.getVendors = async (req, res) => {
   }
 };
 
+// *******************************acceptRequest/rejectRequest******************************************************************************** //
 exports.acceptRequest = async (req, res) => {
   const session = await mongoose.startSession();
   try {
@@ -137,6 +139,7 @@ exports.rejectRequest = async (req, res) => {
   }
 };
 
+// ********************************getVendors-pending/accepted/rejected******************************************************************************** //
 exports.getPending = async (req, res) => {
   try {
     // const limitValue = req.query.limit || 2;
@@ -273,6 +276,7 @@ exports.getAccepted = async (req, res) => {
   }
 };
 
+// ********************************getVendorsWhoRequestedForService******************************************************************************** //
 //@desc get Vendors Who Have Requested For Service
 //@route GET /api/v1/admin/vendorsRequestedService
 //@access Private
@@ -343,6 +347,7 @@ exports.getVendorsRequestedService = async (req, res) => {
   }
 };
 
+// ********************************grantServiceTovendors***************************************************************************** //
 //@desc grant services to vendors who has requested for services
 //@route PUT /api/v1/admin/grantServicesToVendor/:id
 //@access Private
@@ -391,6 +396,7 @@ exports.grantServicesToVendor = async (req, res) => {
   }
 };
 
+// ********************************nearByVendorsForUser/storeInNearbyCollectionWithBookingId******************************************************************************* //
 //@desc get nearby Vendors using bookingId For Users To Provide them services
 //@route GET/admin/nearbyVendors
 //@access Private
@@ -549,6 +555,7 @@ exports.nearbyVendors = async (req, res) => {
       }
 
       // console.log("onLeave", vendor.onLeave, mainVendors[vendorId]);
+      // console.log(result.timeSlot.bookingDate,vendorId)
       if (mainVendors[vendorId] && vendor.onLeave.length > 0) {
         let vendorOnLeave = await Vendor.find({
           _id: vendorId,
@@ -557,8 +564,10 @@ exports.nearbyVendors = async (req, res) => {
               {
                 $elemMatch: {
                   $and: [
-                    { date: { $eq: result.timeSlot.bookingDate } },
+                    { start: { $lte: result.timeSlot.bookingDate } },
+                    { end: { $gte: result.timeSlot.bookingDate } },
                     { status: { $eq: "Approved" } },
+                    // { reason: { $type: "string" } },
                   ],
                 },
               },
@@ -617,7 +626,7 @@ exports.nearbyVendors = async (req, res) => {
             ],
           },
         });
-        // console.log("vendorTimeSlot", vendorTimeSlot);
+        console.log("vendorTimeSlot", vendorTimeSlot);
         if (vendorTimeSlot.length > 0) {
           delete mainVendors[vendorId];
           // console.log("mainVendors TimeSlot", mainVendors);
@@ -640,9 +649,8 @@ exports.nearbyVendors = async (req, res) => {
       {
         _id: params.bookingId,
       },
-      {
-        $addToSet: { vendors: { $each: vendorKeys } },
-      },
+      { vendors: vendorKeys },
+
       { new: true, upsert: true }
     );
     if (!nearByVendors) {
@@ -665,6 +673,176 @@ exports.nearbyVendors = async (req, res) => {
   }
 };
 
+// ********************************sendNotificationToNearbyVendors***************************************************************************** //
+// new API TO SEND PUSH NOTIFICATION TO ALL FETCHED VENDORS BOOKNGID WILL BE PASSED TO VENDRS
+// vendors will accept and transfer the request
+exports.sendNotification = async (req, res) => {
+  const { body } = req;
+  const { error } = Joi.object()
+    .keys({
+      deviceToken: Joi.array().items(Joi.string().required()),
+      message: Joi.string().required(),
+      bookingId: Joi.string().required(),
+      title: Joi.string().required(),
+    })
+    .validate(body);
+  if (error) {
+    return res
+      .status(400)
+      .send({ success: false, message: error.details[0].message });
+  }
+  let matchQuery = {
+    $match: { _id: mongoose.Types.ObjectId(body.bookingId) },
+  };
+
+  let data = await Booking.aggregate([
+    {
+      $facet: {
+        totalData: [
+          matchQuery,
+          { $project: { __v: 0 } },
+          {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "userData",
+            },
+          },
+          {
+            $lookup: {
+              from: "services",
+              localField: "service",
+              foreignField: "_id",
+              as: "serviceData",
+            },
+          },
+        ],
+        // totalCount: [matchQuery, { $count: "count" }],
+      },
+    },
+  ]);
+
+  let result = data[0].totalData;
+
+  if (result.length === 0) {
+    return res.status(200).send({ success: false, message: "No Data Found" });
+  }
+
+  result = result[0];
+
+  let package;
+  if (
+    result.item.packageId.toString() ===
+    result.serviceData[0].silver._id.toString()
+  ) {
+    package = result.serviceData[0].silver;
+  }
+  if (
+    result.item.packageId.toString() ===
+    result.serviceData[0].gold._id.toString()
+  ) {
+    package = result.serviceData[0].gold;
+  }
+  if (
+    result.item.packageId.toString() ===
+    result.serviceData[0].platinum._id.toString()
+  ) {
+    package = result.serviceData[0].platinum;
+  }
+  var dob = new Date(
+    result.userData[0].dateOfBirth.split("/").reverse().join("/")
+  );
+  var year = dob.getFullYear();
+  var month = dob.getMonth();
+  var day = dob.getDate();
+  var today = new Date();
+  var age = today.getFullYear() - year;
+
+  if (
+    today.getMonth() < month ||
+    (today.getMonth() == month && today.getDate() < day)
+  ) {
+    age--;
+  }
+
+  result = {
+    // _id: result._id,
+    // packageName: package.description,
+    // bookingDate: result.timeSlot.bookingDate,
+    // time: `${result.timeSlot.start} - ${result.timeSlot.end}`,
+    // userName: `${result.userData[0].firstName} ${result.userData[0].lastName}`,
+    // address: `${result.userData[0].city}, ${result.userData[0].pincode}`,
+    // location: result.userData[0].location.coordinates,
+
+    bookingId: result._id,
+    packageName: package.description,
+    bookingDate: result.timeSlot.bookingDate,
+    time: `${result.timeSlot.start} - ${result.timeSlot.end}`,
+    userName: `${result.userData[0].firstName} ${result.userData[0].lastName}`,
+    email: result.userData[0].email,
+    age,
+    mobile: result.userData[0].phone,
+    gender: result.userData[0].gender,
+    bookingStatus: result.bookingStatus,
+    address: `${result.userData[0].city}, ${result.userData[0].pincode}`,
+    location: result.userData[0].location.coordinates,
+    userId: result.userId,
+    service: result.service,
+    packageId: package._id,
+    amountToBePaid: result.total,
+    payby: result.payby,
+    paid: result.paid,
+    paymentStatus: result.paymentStatus,
+  };
+  let registration_ids = body.deviceToken;
+  let notification = {
+    body: { result, message: body.message },
+    title: body.title,
+  };
+  let serverKey = `key=${process.env.SERVER_KEY}`;
+  let api = `${process.env.GOOGLE_FIREBASE_API}`;
+  try {
+    let result = await axios.post(
+      api,
+      { registration_ids, notification },
+      {
+        headers: {
+          Authorization: serverKey,
+        },
+      }
+    );
+    let failed = {};
+    let passed = {};
+    if (result.data.failure) {
+      result.data.results.map((item, index) => {
+        if (item.error) {
+          failed[index] = "";
+        }
+      });
+      for (let i = 0; i < body.deviceToken.length; i++) {
+        if (i in failed) {
+          failed[i] = body.deviceToken[i];
+        } else {
+          passed[i] = body.deviceToken[i];
+        }
+      }
+      return res.status(400).send({
+        success: false,
+        message: "Notification Sent Successfully Except These",
+        failed,
+        passed,
+      });
+    }
+    return res
+      .status(200)
+      .send({ success: true, message: "Notification sent successfully" });
+  } catch (e) {
+    return res.status(500).send({ success: false, error: e.message });
+  }
+};
+
+// ********************************getNearByVendorsFoundedForBookingFromNearbyCoolection******************************************************************************* //
 // @desc see  all booking of an user using userId
 // @route  GET/admin/bookingNearbyVendors
 // @acess Private
@@ -724,7 +902,7 @@ exports.getBookingNearbyVendors = async (req, res) => {
       message: "Bookings Fetched Successfully",
       // resultData,
       // count,
-      newResult
+      newResult,
     });
   } catch (e) {
     return res.status(500).send({
@@ -735,84 +913,7 @@ exports.getBookingNearbyVendors = async (req, res) => {
   }
 };
 
-// new API TO SEND PUSH NOTIFICATION TO ALL FETCHED VENDORS BOOKNGID WILL BE PASSED TO VENDRS
-// vendors will accept and transfer the request
-exports.sendNotification = async (req, res) => {
-  const { body } = req;
-  const { error } = Joi.object()
-    .keys({
-      deviceToken: Joi.array().items(Joi.string().required()),
-      message: Joi.string().required(),
-      bookingId: Joi.string().required(),
-      title: Joi.string().required(),
-    })
-    .validate(body);
-  if (error) {
-    return res
-      .status(400)
-      .send({ success: false, message: error.details[0].message });
-  }
-  let booking = await Booking.find({
-    _id: body.bookingId,
-    bookingStatus: "Pending",
-  });
-  if (!booking) {
-    return res
-      .status(500)
-      .send({ success: false, message: "Something went wrong" });
-  }
-  if (booking.length === 0) {
-    return res
-      .status(404)
-      .send({ success: false, message: "Booking Not Found" });
-  }
-  let registration_ids = body.deviceToken;
-  let notification = {
-    body: { booking, message: body.message },
-    title: body.title,
-  };
-  let serverKey = `key=${process.env.SERVER_KEY}`;
-  let api = `${process.env.GOOGLE_FIREBASE_API}`;
-  try {
-    let result = await axios.post(
-      api,
-      { registration_ids, notification },
-      {
-        headers: {
-          Authorization: serverKey,
-        },
-      }
-    );
-    let failed = {};
-    let passed = {};
-    if (result.data.failure) {
-      result.data.results.map((item, index) => {
-        if (item.error) {
-          failed[index] = "";
-        }
-      });
-      for (let i = 0; i < body.deviceToken.length; i++) {
-        if (i in failed) {
-          failed[i] = body.deviceToken[i];
-        } else {
-          passed[i] = body.deviceToken[i];
-        }
-      }
-      return res.status(400).send({
-        success: false,
-        message: "Notification Sent Successfully Except These",
-        failed,
-        passed,
-      });
-    }
-    return res
-      .status(200)
-      .send({ success: true, message: "Notification sent successfully" });
-  } catch (e) {
-    return res.status(500).send({ success: false, error: e.message });
-  }
-};
-
+// *******************************EXTRA*****************NOT_IN_USE******************************************************** //
 //EXTRA
 //@desc get Vendors Providing That Service
 //@route GET/api/v1/admin/vendorsForUser
@@ -960,6 +1061,7 @@ exports.getVendorLocation = async (req, res) => {
   }
 };
 
+// ********************************getVendorsAppliedForLeave******************************************************************************** //
 exports.getVendorsAppliedForLeave = async (req, res) => {
   try {
     console.log(req.query);
@@ -1003,6 +1105,7 @@ exports.getVendorsAppliedForLeave = async (req, res) => {
   }
 };
 
+// ********************************approve/disapproveLeave******************************************************************************* //
 exports.leaveApproved = async (req, res) => {
   try {
     const { body } = req;
@@ -1103,6 +1206,7 @@ exports.leaveDisapproved = async (req, res) => {
   }
 };
 
+// ********************************approve/disapproveEmergencyLeave******************************************************************************** //
 exports.emergencyLeaveApproved = async (req, res) => {
   try {
     const { body } = req;
@@ -1203,6 +1307,7 @@ exports.emergencyLeaveDisapproved = async (req, res) => {
   }
 };
 
+// ********************************getLoggedIn/LoggedOutVendors******************************************************************************** //
 exports.getLoggedInVendors = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
@@ -1290,6 +1395,7 @@ exports.getLoggedOutVendors = async (req, res) => {
   }
 };
 
+// ********************************checkTimingOfAVendor******************************************************************************** //
 exports.checkTimingOfVendor = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
@@ -1344,6 +1450,7 @@ exports.checkTimingOfVendor = async (req, res) => {
   }
 };
 
+// ********************************checkTimingOfVendors******************************************************************************** //
 exports.checkTimingOfVendors = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
@@ -1392,6 +1499,7 @@ exports.checkTimingOfVendors = async (req, res) => {
   }
 };
 
+// ********************************checkOnDutyStatusOfAVendors******************************************************************************** //
 exports.checkVendorOnDutyStatus = async (req, res) => {
   try {
     const limitValue = +req.query.limit || 6;
